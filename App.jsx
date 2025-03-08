@@ -60,44 +60,67 @@ export default function App() {
   return (
     <div style={{ height: "100vh", display: "flex", flexDirection: "column" }}>
       <div style={{ 
-        padding: "5px", 
+        padding: "10px", 
         borderBottom: "1px solid #eee", 
-        display: "flex", 
-        alignItems: "center",
-        height: "30px",
         backgroundColor: "#f8f8f8",
         fontSize: "12px"
       }}>
-        <select 
-          value={selectedModel} 
-          onChange={handleModelChange}
-          style={{ marginRight: "10px", height: "20px", fontSize: "12px" }}
-        >
-          {Object.keys(modelFunctions).map(model => (
-            <option key={model} value={model}>{model}</option>
-          ))}
-        </select>
+        <div style={{
+          display: "flex",
+          alignItems: "center",
+          marginBottom: "10px"
+        }}>
+          <span style={{ marginRight: "5px", fontWeight: "bold" }}>Model:</span>
+          <select 
+            value={selectedModel} 
+            onChange={handleModelChange}
+            style={{ marginRight: "10px", height: "24px", fontSize: "12px" }}
+          >
+            {Object.keys(modelFunctions).map(model => (
+              <option key={model} value={model}>{model}</option>
+            ))}
+          </select>
+        </div>
         
-        <div style={{ display: "flex", flexWrap: "nowrap", overflowX: "auto" }}>
+        <div style={{ 
+          display: "flex", 
+          flexWrap: "wrap", 
+          gap: "10px"
+        }}>
           {Object.entries(params).map(([paramName, value]) => {
             const isBoolean = typeof value === 'boolean';
             
             return (
-              <div key={paramName} style={{ marginRight: "10px", whiteSpace: "nowrap" }}>
-                {paramName}:
+              <div key={paramName} style={{ 
+                display: "flex", 
+                alignItems: "center",
+                backgroundColor: "#fff",
+                border: "1px solid #ccc",
+                padding: "5px 8px",
+                borderRadius: "4px"
+              }}>
+                <span style={{ 
+                  marginRight: "8px", 
+                  fontWeight: "bold",
+                  color: "#333"
+                }}>
+                  {paramName}:
+                </span>
+                
                 {isBoolean ? (
                   <input
+                    id={`param-${paramName}`}
                     type="checkbox"
                     checked={value}
                     onChange={(e) => handleParamChange(paramName, e.target.checked)}
-                    style={{ marginLeft: "3px" }}
                   />
                 ) : (
                   <input
+                    id={`param-${paramName}`}
                     type="number"
                     value={value}
                     onChange={(e) => handleParamChange(paramName, parseFloat(e.target.value))}
-                    style={{ width: "40px", marginLeft: "3px", height: "18px", fontSize: "12px" }}
+                    style={{ width: "60px", height: "20px", fontSize: "12px" }}
                   />
                 )}
               </div>
