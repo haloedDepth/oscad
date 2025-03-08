@@ -1,6 +1,6 @@
-// validator.js - Elegant functional validators
+// validator.js - Elegant functional validators with proper composition
 
-// Basic validators
+// Basic validators - each does exactly one thing
 export function isNumber(params, param) {
     if (typeof params[param] !== 'number' || isNaN(params[param])) {
       return {
@@ -11,7 +11,7 @@ export function isNumber(params, param) {
     return { valid: true };
   }
   
-  export function isPositive(params, param) {
+  export function isGreaterThanZero(params, param) {
     if (params[param] <= 0) {
       return {
         valid: false,
@@ -21,7 +21,7 @@ export function isNumber(params, param) {
     return { valid: true };
   }
   
-  export function lessThan(params, param, compareValue) {
+  export function isLessThan(params, param, compareValue) {
     const value = params[param];
     if (value >= compareValue) {
       return {
@@ -59,9 +59,9 @@ export function isNumber(params, param) {
     };
   }
   
-  export function combine(...validators) {
+  export function combine(...validatorFns) {
     return (params) => {
-      for (const validator of validators) {
+      for (const validator of validatorFns) {
         const result = validator(params);
         if (!result.valid) return result;
       }
@@ -69,12 +69,18 @@ export function isNumber(params, param) {
     };
   }
   
-  // Pre-composed common validators
-  export function isValidNumber(params, param) {
-    const numberCheck = isNumber(params, param);
-    if (!numberCheck.valid) return numberCheck;
-    return isPositive(params, param);
-  }
+  // Composed validators using combine
+  export const isPositive = (params, param) => 
+    combine(
+      (p) => isNumber(p, param),
+      (p) => isGreaterThanZero(p, param)
+    )(params);
+  
+  export const lessThan = (params, param, compareValue) => 
+    combine(
+      (p) => isNumber(p, param),
+      (p) => isLessThan(p, param, compareValue)
+    )(params);
   
   // Validation runner
   export function validateModelParams(params, validators) {
