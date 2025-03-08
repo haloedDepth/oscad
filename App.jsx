@@ -1,87 +1,129 @@
 import React, { useState, useEffect } from "react";
-
-import FileSaver from "file-saver";
 import { wrap } from "comlink";
 
 import ThreeContext from "./ThreeContext.jsx";
 import ReplicadMesh from "./ReplicadMesh.jsx";
 
 import cadWorker from "./worker.js?worker";
+import { modelFunctions } from "./cad";
+
 const cad = wrap(new cadWorker());
 
-export default function ReplicadApp() {
-  const [size, setSize] = useState(5);
+function getParamNames(fn) {
+  const str = fn.toString();
+  const paramStart = str.indexOf('(') + 1;
+  const paramEnd = str.indexOf(')');
+  const params = str.substring(paramStart, paramEnd).split(',');
+  
+  return params.map(p => {
+    const [name, defaultValue] = p.trim().split('=');
+    return {
+      name: name.trim(), 
+      defaultValue: eval(defaultValue?.trim())
+    };
+  });
+}
 
-  const downloadModel = async () => {
-    const blob = await cad.createBlob(size);
-    FileSaver.saveAs(blob, "thing.stl");
+const modelInfo = {};
+Object.entries(modelFunctions).forEach(([name, fn]) => {
+  const params = getParamNames(fn);
+  modelInfo[name] = {
+    params: params.reduce((obj, param) => {
+      obj[param.name] = param.defaultValue;
+      return obj;
+    }, {})
   };
+});
 
+export default function App() {
+  const [selectedModel, setSelectedModel] = useState(Object.keys(modelFunctions)[0]);
+  const [params, setParams] = useState(modelInfo[selectedModel].params);
   const [mesh, setMesh] = useState(null);
-
+  
   useEffect(() => {
-    cad.createMesh(size).then((m) => setMesh(m));
-  }, [size]);
-
+    cad.createMesh(selectedModel, params).then(m => setMesh(m));
+  }, [selectedModel, params]);
+  
+  const handleModelChange = (e) => {
+    const newModel = e.target.value;
+    setSelectedModel(newModel);
+    setParams(modelInfo[newModel].params);
+  };
+  
+  const handleParamChange = (paramName, value) => {
+    setParams(prev => ({
+      ...prev,
+      [paramName]: value
+    }));
+  };
+  
   return (
-    <main>
-      <h1>
-        A{" "}
-        <a
-          href="https://replicad.xyz"
-          target="_blank"
-          rel="noopener noreferrer"
+    <div style={{ height: "100vh", display: "flex", flexDirection: "column" }}>
+      <div style={{ 
+        padding: "5px", 
+        borderBottom: "1px solid #eee", 
+        display: "flex", 
+        alignItems: "center",
+        height: "30px",
+        backgroundColor: "#f8f8f8",
+        fontSize: "12px"
+      }}>
+        <select 
+          value={selectedModel} 
+          onChange={handleModelChange}
+          style={{ marginRight: "10px", height: "20px", fontSize: "12px" }}
         >
-          replicad
-        </a>{" "}
-        sample app
-      </h1>
-      <p>
-        You can find the code for this app{" "}
-        <a
-          href="https://github.com/sgenoud/replicad/tree/main/packages/replicad-app-example"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          on the GitHub repository
-        </a>
-      </p>
-      <section
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-        }}
-      >
-        <div>
-          <label htmlFor="thicknessInput">thickness</label>
-          <input
-            id="thicknessInput"
-            type="number"
-            step="1"
-            min="1"
-            max="10"
-            value={size}
-            onChange={(v) => {
-              const val = parseInt(v.target.value);
-              if (val > 0 && val <= 10) setSize(val);
-            }}
-          />
+          {Object.keys(modelFunctions).map(model => (
+            <option key={model} value={model}>{model}</option>
+          ))}
+        </select>
+        
+        <div style={{ display: "flex", flexWrap: "nowrap", overflowX: "auto" }}>
+          {Object.entries(params).map(([paramName, value]) => {
+            const isBoolean = typeof value === 'boolean';
+            
+            return (
+              <div key={paramName} style={{ marginRight: "10px", whiteSpace: "nowrap" }}>
+                {paramName}:
+                {isBoolean ? (
+                  <input
+                    type="checkbox"
+                    checked={value}
+                    onChange={(e) => handleParamChange(paramName, e.target.checked)}
+                    style={{ marginLeft: "3px" }}
+                  />
+                ) : (
+                  <input
+                    type="number"
+                    value={value}
+                    onChange={(e) => handleParamChange(paramName, parseFloat(e.target.value))}
+                    style={{ width: "40px", marginLeft: "3px", height: "18px", fontSize: "12px" }}
+                  />
+                )}
+              </div>
+            );
+          })}
         </div>
-        <button onClick={downloadModel}>Download STL</button>
-      </section>
-      <section style={{ height: "300px" }}>
+      </div>
+      
+      <div style={{ flex: 1 }}>
         {mesh ? (
           <ThreeContext>
             <ReplicadMesh edges={mesh.edges} faces={mesh.faces} />
           </ThreeContext>
         ) : (
-          <div
-            style={{ display: "flex", alignItems: "center", fontSize: "2em" }}
-          >
+          <div style={{ 
+            height: "100%", 
+            display: "flex", 
+            alignItems: "center", 
+            justifyContent: "center",
+            fontSize: "12px",
+            color: "#999"
+          }}>
             Loading...
           </div>
         )}
-      </section>
-    </main>
+      </div>
+    </div>
   );
 }

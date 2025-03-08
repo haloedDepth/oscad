@@ -3,19 +3,10 @@ import { Canvas } from "@react-three/fiber";
 import { OrbitControls } from "@react-three/drei";
 import * as THREE from "three";
 
-// We change the default orientation - threejs tends to use Y are the height,
-// while replicad uses Z. This is mostly a representation default.
+// Set Z as the up direction for ReplicAD models
 THREE.Object3D.DEFAULT_UP.set(0, 0, 1);
 
-// This is the basics to render a nice looking model user react-three-fiber
-//
-// The camera is positioned for the model we present (that cannot change size.
-// You might need to adjust this with something like the autoadjust from the
-// `Stage` component of `drei`
-//
-// Depending on your needs I would advice not using a light and relying on
-// a matcap material instead of the meshStandardMaterial used here.
-export default function ThreeContext({ children, ...props }) {
+export default function ThreeContext({ children }) {
   const dpr = Math.min(window.devicePixelRatio, 2);
 
   return (
@@ -28,8 +19,12 @@ export default function ThreeContext({ children, ...props }) {
         }}
         dpr={dpr}
         frameloop="demand"
-        camera={{ position: [20, 40, 50] }}
-        {...props}
+        // Orthographic camera setup
+        camera={{ 
+          position: [50, 50, 50],
+          orthographic: true,
+          zoom: 5
+        }}
       >
         <OrbitControls />
         <ambientLight intensity={4} />
