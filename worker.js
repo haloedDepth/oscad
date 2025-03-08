@@ -29,12 +29,20 @@ function createMesh(modelName, params) {
     const modelFn = modelFunctions[modelName];
     
     // Call the function with the parameter values
-    const shape = modelFn(...Object.values(params));
+    const result = modelFn(...Object.values(params));
+    
+    // Check if validation failed
+    if (result && result.validationErrors) {
+      return {
+        error: true,
+        validationErrors: result.validationErrors
+      };
+    }
     
     // Return the mesh data
     return {
-      faces: shape.mesh(),
-      edges: shape.meshEdges(),
+      faces: result.mesh(),
+      edges: result.meshEdges(),
     };
   });
 }

@@ -1,7 +1,9 @@
-// Simple model functions with default parameters in their declarations
-import { drawRoundedRectangle, makeCylinder, makeBox } from "replicad";
+// cad.js
+import { drawRoundedRectangle } from "replicad";
+import { withValidation } from "./validator.js";
+import { modelSchemas } from "./modelValidation.js";
 
-// Box model with all parameters in function declaration
+// Pure model functions focused only on creating the shape
 export function createBox(width = 30, height = 50, depth = 20, thickness = 2, cornerRadius = 5) {
   return drawRoundedRectangle(width, height, cornerRadius)
     .sketchOnPlane()
@@ -9,8 +11,7 @@ export function createBox(width = 30, height = 50, depth = 20, thickness = 2, co
     .shell(thickness, (f) => f.inPlane("XY", depth));
 }
 
-
-// Simple map of available model functions
+// Apply validation to all model functions
 export const modelFunctions = {
-  "Box": createBox
+  "Box": withValidation(createBox, modelSchemas["Box"])
 };

@@ -26,7 +26,9 @@ function getParamNames(fn) {
 
 const modelInfo = {};
 Object.entries(modelFunctions).forEach(([name, fn]) => {
-  const params = getParamNames(fn);
+  // Get the original function (before validation wrapper)
+  const originalFn = fn.original || fn;
+  const params = getParamNames(originalFn);
   modelInfo[name] = {
     params: params.reduce((obj, param) => {
       obj[param.name] = param.defaultValue;
@@ -39,9 +41,18 @@ export default function App() {
   const [selectedModel, setSelectedModel] = useState(Object.keys(modelFunctions)[0]);
   const [params, setParams] = useState(modelInfo[selectedModel].params);
   const [mesh, setMesh] = useState(null);
+  const [validationErrors, setValidationErrors] = useState([]);
   
   useEffect(() => {
-    cad.createMesh(selectedModel, params).then(m => setMesh(m));
+    setValidationErrors([]);
+    cad.createMesh(selectedModel, params).then(result => {
+      if (result.error && result.validationErrors) {
+        setValidationErrors(result.validationErrors);
+        setMesh(null);
+      } else {
+        setMesh(result);
+      }
+    });
   }, [selectedModel, params]);
   
   const handleModelChange = (e) => {
@@ -127,6 +138,24 @@ export default function App() {
             );
           })}
         </div>
+        
+        {validationErrors.length > 0 && (
+          <div style={{
+            marginTop: "10px",
+            padding: "8px 12px",
+            backgroundColor: "#f8d7da",
+            color: "#721c24",
+            borderRadius: "4px",
+            fontSize: "12px"
+          }}>
+            <div style={{ fontWeight: "bold", marginBottom: "4px" }}>Invalid parameters:</div>
+            <ul style={{ margin: "0", paddingLeft: "20px" }}>
+              {validationErrors.map((error, index) => (
+                <li key={index}>{error}</li>
+              ))}
+            </ul>
+          </div>
+        )}
       </div>
       
       <div style={{ flex: 1 }}>
@@ -143,7 +172,7 @@ export default function App() {
             fontSize: "12px",
             color: "#999"
           }}>
-            Loading...
+            {validationErrors.length > 0 ? 'Fix parameters to see model' : 'Loading...'}
           </div>
         )}
       </div>
