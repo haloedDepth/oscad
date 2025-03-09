@@ -21,9 +21,11 @@ export default function ThreeContext({ children }) {
         frameloop="demand"
         // Orthographic camera setup
         camera={{ 
-          position: [50, 50, 50],
+          position: [200, 200, 200],
           orthographic: true,
-          zoom: 5
+          zoom: 1,
+          far: 10000,
+          near: 0.1
         }}
       >
         <OrbitControls />
