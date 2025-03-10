@@ -39,6 +39,19 @@ function CameraSetup() {
   return null;
 }
 
+// Coordinate system visualization component
+function CoordinateSystem() {
+  return (
+    <>
+      {/* Axes helper to show the X, Y, Z axes - Red is X, Green is Y, Blue is Z */}
+      <axesHelper args={[200]} />
+      
+      {/* Grid in XY plane (since Z is up, this is the "ground plane") */}
+      <gridHelper args={[400, 40, 0x888888, 0x444444]} rotation={[Math.PI/2, 0, 0]} />
+    </>
+  );
+}
+
 export default function ThreeContext({ children }) {
   const dpr = Math.min(window.devicePixelRatio, 2);
 
@@ -74,6 +87,10 @@ export default function ThreeContext({ children }) {
         />
         <ambientLight intensity={4} />
         <pointLight position={[100, 100, 100]} />
+        
+        {/* Add coordinate system */}
+        <CoordinateSystem />
+        
         {children}
       </Canvas>
     </Suspense>

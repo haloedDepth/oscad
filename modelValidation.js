@@ -1,4 +1,4 @@
-// modelValidation.js - Elegant model schemas
+// modelValidation.js
 import { 
   validateAll, 
   isPositive,
@@ -22,5 +22,9 @@ export const modelSchemas = {
   "Ellipsoid": [
     // Validate all dimensions are positive
     validateAll(isPositive, 'aLength', 'bLength', 'cLength')
+  ],
+  "DiagonalCuboidPattern": [
+    // Validate count is positive
+    validateAll(isPositive, 'count')
   ]
 };
