@@ -5,10 +5,10 @@ import { modelSchemas } from "./modelValidation.js";
 
 
 // Create a staircase as a compound shape
-export function createStaircase(spaceWidth = 800, spaceLength = 2000, spaceHeight = 1000, stairThickness = 5) {
+export function createStaircase(spaceWidth = 800, spaceLength = 2000, spaceHeight = 1000) {
   // Fixed stair dimensions
-  const STAIR_THICKNESS = stairThickness;
   const STAIR_LENGTH = 200; // 200mm length in direction of travel
+  const STAIR_THICKNESS = 5; // Fixed thickness at 5mm
   
   // Calculate optimal number of stairs
   let numStairs = 1;
@@ -45,17 +45,11 @@ export function createStaircase(spaceWidth = 800, spaceLength = 2000, spaceHeigh
     const yPosition = horizontalStep * (i + 1) - STAIR_LENGTH/2; // Centered at position
     const zPosition = verticalSpacing * (i + 1) - STAIR_THICKNESS; // Top of stair at height
     
-    // Create box directly with positioned coordinates
-    // coordinates format: [x1, y1, z1], [x2, y2, z2]
-    // x: width direction (left to right)
-    // y: depth/length direction (front to back)
-    // z: height direction (bottom to top)
-    const stair = makeBox(
-      [0, yPosition, zPosition], // Starting point (left front bottom corner)
-      [spaceWidth, yPosition + STAIR_LENGTH, zPosition + STAIR_THICKNESS] // Ending point (right back top corner)
-    );
+    // Create a cuboid with the stair dimensions (fixed length 200mm and thickness 5mm)
+    const stair = createCuboid(spaceWidth, 200, 5);
     
-    stairs.push(stair);
+    // Translate the cuboid to the correct position
+    stairs.push(stair.translate([0, yPosition, zPosition]));
   }
   
   // Create and return compound shape

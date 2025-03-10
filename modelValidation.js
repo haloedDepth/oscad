@@ -9,7 +9,7 @@ import {
 export const modelSchemas = {
   "Staircase": [
     // Validate all parameters are positive
-    validateAll(isPositive, 'spaceWidth', 'spaceLength', 'spaceHeight', 'stairThickness'),
+    validateAll(isPositive, 'spaceWidth', 'spaceLength', 'spaceHeight'),
     
     // Validate minimum height for stairs
     (params) => {
