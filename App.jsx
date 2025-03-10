@@ -45,7 +45,12 @@ export default function App() {
   
   useEffect(() => {
     setValidationErrors([]);
+    console.time(`[PERF] worker call for ${selectedModel}`);
+    console.log(`[INFO] Creating ${selectedModel} with params:`, params);
+    
     cad.createMesh(selectedModel, params).then(result => {
+      console.timeEnd(`[PERF] worker call for ${selectedModel}`);
+      
       if (result.error && result.validationErrors) {
         setValidationErrors(result.validationErrors);
         setMesh(null);
