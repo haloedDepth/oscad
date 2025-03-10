@@ -5,7 +5,7 @@ import ThreeContext from "./ThreeContext.jsx";
 import ReplicadMesh from "./ReplicadMesh.jsx";
 
 import cadWorker from "./worker.js?worker";
-import { modelFunctions } from "./cad";
+import { modelFunctions } from "./models";
 
 const cad = wrap(new cadWorker());
 

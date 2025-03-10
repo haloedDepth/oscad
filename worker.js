@@ -3,8 +3,8 @@ import opencascadeWasm from "replicad-opencascadejs/src/replicad_single.wasm?url
 import { setOC } from "replicad";
 import { expose } from "comlink";
 
-// Import our model functions
-import { modelFunctions } from "./cad";
+// Import our model functions from the models folder
+import { modelFunctions } from "./models";
 
 // Initialize OpenCascade
 let loaded = false;
