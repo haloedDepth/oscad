@@ -1,10 +1,43 @@
-import React, { Suspense } from "react";
-import { Canvas } from "@react-three/fiber";
+import React, { Suspense, useRef, useEffect } from "react";
+import { Canvas, useThree } from "@react-three/fiber";
 import { OrbitControls } from "@react-three/drei";
 import * as THREE from "three";
 
 // Set Z as the up direction for ReplicAD models
 THREE.Object3D.DEFAULT_UP.set(0, 0, 1);
+
+// Camera setup component that forcibly configures the camera
+function CameraSetup() {
+  const { camera, set } = useThree();
+  
+  useEffect(() => {
+    // Force camera to be orthographic
+    if (!(camera instanceof THREE.OrthographicCamera)) {
+      console.log("Converting to orthographic camera");
+      const aspect = window.innerWidth / window.innerHeight;
+      const frustumSize = 1000;
+      const newCamera = new THREE.OrthographicCamera(
+        frustumSize * aspect / -2,
+        frustumSize * aspect / 2,
+        frustumSize / 2,
+        frustumSize / -2,
+        0.01,
+        10000
+      );
+      newCamera.position.set(0, -400, 200);
+      newCamera.lookAt(0, 0, 0);
+      newCamera.updateProjectionMatrix();
+      set({ camera: newCamera });
+    } else {
+      console.log("Camera is already orthographic");
+      camera.position.set(0, -400, 200);
+      camera.lookAt(0, 0, 0);
+      camera.updateProjectionMatrix();
+    }
+  }, [camera, set]);
+  
+  return null;
+}
 
 export default function ThreeContext({ children }) {
   const dpr = Math.min(window.devicePixelRatio, 2);
@@ -19,17 +52,26 @@ export default function ThreeContext({ children }) {
         }}
         dpr={dpr}
         frameloop="demand"
-        // Orthographic camera setup
-        camera={{ 
-          // Position camera to look directly along Y axis
+        orthographic
+        camera={{
           position: [0, -400, 200],
-          orthographic: true,
           zoom: 1,
           far: 10000,
           near: 0.01
         }}
       >
-        <OrbitControls />
+        <CameraSetup />
+        <OrbitControls
+          enableRotate={true}
+          enablePan={true}
+          enableZoom={true}
+          mouseButtons={{
+            LEFT: THREE.MOUSE.ROTATE,
+            MIDDLE: THREE.MOUSE.DOLLY,
+            RIGHT: THREE.MOUSE.PAN
+          }}
+          zoomToCursor={true}
+        />
         <ambientLight intensity={4} />
         <pointLight position={[100, 100, 100]} />
         {children}
