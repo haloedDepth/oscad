@@ -21,7 +21,8 @@ export default function ThreeContext({ children }) {
         frameloop="demand"
         // Orthographic camera setup
         camera={{ 
-          position: [200, 200, 200],
+          // Position camera to look directly along Y axis
+          position: [0, -400, 200],
           orthographic: true,
           zoom: 1,
           far: 10000,
