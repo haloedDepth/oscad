@@ -3,13 +3,6 @@ import { drawRoundedRectangle, makeBox, compoundShapes } from "replicad";
 import { withValidation } from "./validator.js";
 import { modelSchemas } from "./modelValidation.js";
 
-// Existing model function for the box
-export function createBox(width = 30, height = 50, depth = 20, thickness = 2, cornerRadius = 5) {
-  return drawRoundedRectangle(width, height, cornerRadius)
-    .sketchOnPlane()
-    .extrude(depth)
-    .shell(thickness, (f) => f.inPlane("XY", depth));
-}
 
 // Create a staircase as a compound shape
 export function createStaircase(spaceWidth = 800, spaceLength = 2000, spaceHeight = 1000, stairThickness = 5) {
@@ -69,8 +62,16 @@ export function createStaircase(spaceWidth = 800, spaceLength = 2000, spaceHeigh
   return compoundShapes(stairs);
 }
 
+// New function to create a centered cuboid
+export function createCuboid(width = 100, depth = 100, height = 100) {
+  return makeBox(
+    [0, 0, 0],                 // bottom-front-left corner
+    [width, depth, height]     // top-back-right corner
+  );
+}
+
 // Apply validation to all model functions
 export const modelFunctions = {
-  "Box": withValidation(createBox, modelSchemas["Box"]),
-  "Staircase": withValidation(createStaircase, modelSchemas["Staircase"])
+  "Staircase": withValidation(createStaircase, modelSchemas["Staircase"]),
+  "Cuboid": withValidation(createCuboid, modelSchemas["Cuboid"])
 };
