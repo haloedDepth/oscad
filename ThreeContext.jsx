@@ -25,7 +25,7 @@ export default function ThreeContext({ children }) {
           orthographic: true,
           zoom: 1,
           far: 10000,
-          near: 0.1
+          near: 0.01
         }}
       >
         <OrbitControls />
