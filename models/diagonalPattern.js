@@ -8,31 +8,34 @@ export const centerSelector = (model) => model.boundingBox.center;
 // Create a Ray (positioned vector) with origin point and direction vector
 export function ray(origin, direction) {
   return {
-    origin: origin, // ReplicAD's Point type (array, Vector, etc.)
-    direction: direction // Should be a Vector
+    origin: origin,
+    direction: direction
+  };
+}
+
+// Helper to combine multiple model generators into one
+export function combine(...modelGenerators) {
+  return (...args) => {
+    const allModels = modelGenerators.flatMap(generator => generator(...args));
+    return compoundShapes(allModels);
   };
 }
 
 // Create models positioned along a ray
 export function createDiagonalPatternModels(
-  modelCreator,      // Function that creates model 
-  referenceSelector, // Function to get reference point
-  ray,               // Ray defining start point and direction
-  count              // Number of instances
+  modelCreator,
+  referenceSelector,
+  ray,
+  count
 ) {
   const models = [];
   
   for (let i = 0; i < count; i++) {
-    // Position along the ray (from 0% to 100%)
     const t = count > 1 ? i / (count - 1) : 0;
     
-    // Create model instance
     const model = modelCreator();
-    
-    // Get reference point
     const refPoint = referenceSelector(model);
     
-    // Calculate target position (origin + t*direction)
     const targetPos = ray.direction.multiply(t);
     const targetPoint = [
       ray.origin[0] + targetPos.x,
@@ -40,14 +43,12 @@ export function createDiagonalPatternModels(
       ray.origin[2] + targetPos.z
     ];
     
-    // Calculate offset
     const offset = [
       targetPoint[0] - refPoint[0],
       targetPoint[1] - refPoint[1],
       targetPoint[2] - refPoint[2]
     ];
     
-    // Translate model
     models.push(model.translate(offset));
   }
   
