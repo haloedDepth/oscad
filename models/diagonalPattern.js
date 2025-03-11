@@ -21,38 +21,30 @@ export function combine(...modelGenerators) {
   };
 }
 
-// Create models positioned along a ray
-export function createDiagonalPatternModels(
-  modelCreator,
-  referenceSelector,
-  ray,
-  count
-) {
-  const models = [];
-  
-  for (let i = 0; i < count; i++) {
+// Create points positioned along a ray
+export function createDiagonalPattern(ray, count) {
+  return Array.from({ length: count }, (_, i) => {
     const t = count > 1 ? i / (count - 1) : 0;
-    
-    const model = modelCreator();
-    const refPoint = referenceSelector(model);
-    
     const targetPos = ray.direction.multiply(t);
-    const targetPoint = [
+    return [
       ray.origin[0] + targetPos.x,
       ray.origin[1] + targetPos.y,
       ray.origin[2] + targetPos.z
     ];
-    
-    const offset = [
+  });
+}
+
+// Place models at specified points
+export function placeModelsAtPoints(modelCreator, referenceSelector, points) {
+  return points.map(targetPoint => {
+    const model = modelCreator();
+    const refPoint = referenceSelector(model);
+    return model.translate([
       targetPoint[0] - refPoint[0],
       targetPoint[1] - refPoint[1],
       targetPoint[2] - refPoint[2]
-    ];
-    
-    models.push(model.translate(offset));
-  }
-  
-  return models;
+    ]);
+  });
 }
 
 // Create a diagonal pattern of cuboids
@@ -69,14 +61,16 @@ export function createDiagonalCuboidPattern(
   boxHeight = 10
 ) {
   return compoundShapes(
-    createDiagonalPatternModels(
+    placeModelsAtPoints(
       () => createCuboid(boxWidth, boxDepth, boxHeight),
       centerSelector,
-      ray(
-        [originX, originY, originZ],
-        new Vector([vectorX, vectorY, vectorZ])
-      ),
-      count
+      createDiagonalPattern(
+        ray(
+          [originX, originY, originZ],
+          new Vector([vectorX, vectorY, vectorZ])
+        ),
+        count
+      )
     )
   );
 }
