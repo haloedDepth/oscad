@@ -2,6 +2,7 @@
 import { 
   validateAll, 
   isPositive,
+  isNumber,
   lessThan,
   halfOfMin
 } from './validator.js';
@@ -26,5 +27,10 @@ export const modelSchemas = {
   "DiagonalCuboidPattern": [
     // Validate count is positive
     validateAll(isPositive, 'count')
+  ],
+  "RectangularCuboidGrid": [
+    // Validate grid parameters
+    validateAll(isNumber, 'originX', 'originY', 'originZ', 'directionX', 'directionY', 'directionZ', 'normalX', 'normalY', 'normalZ'),
+    validateAll(isPositive, 'rowCount', 'colCount', 'xSpacing', 'ySpacing', 'boxWidth', 'boxDepth', 'boxHeight')
   ]
 };

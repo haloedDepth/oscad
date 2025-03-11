@@ -25,7 +25,8 @@ export function combine(...modelGenerators) {
 export function createDiagonalPattern(ray, count) {
   return Array.from({ length: count }, (_, i) => {
     const t = count > 1 ? i / (count - 1) : 0;
-    const targetPos = ray.direction.multiply(t);
+    // Convert direction array to Vector here internally
+    const targetPos = new Vector(ray.direction).multiply(t);
     return [
       ray.origin[0] + targetPos.x,
       ray.origin[1] + targetPos.y,
@@ -67,7 +68,7 @@ export function createDiagonalCuboidPattern(
       createDiagonalPattern(
         ray(
           [originX, originY, originZ],
-          new Vector([vectorX, vectorY, vectorZ])
+          [vectorX, vectorY, vectorZ]
         ),
         count
       )
