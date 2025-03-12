@@ -1,6 +1,7 @@
 // models/linearPattern.js
-import { Vector, compoundShapes } from "replicad";
+import { Vector, Plane, compoundShapes } from "replicad";
 import { createCuboid } from './cuboid.js';
+import { createRectangularGrid } from './gridPattern.js';
 
 // Helper to select geometric center of a model
 export const centerSelector = (model) => model.boundingBox.center;
@@ -13,28 +14,45 @@ export function combine(...modelGenerators) {
   };
 }
 
-// Create points with orientation along a line
+// Create points with orientation along a line using the grid pattern under the hood
 export function createLinearPattern(origin, direction, count, orientationX = 0, orientationY = 0, orientationZ = 1) {
   const directionVector = new Vector(direction);
   const length = directionVector.Length;
   const normalizedDirection = directionVector.normalized();
-  const orientationVector = new Vector([orientationX, orientationY, orientationZ]).normalized();
   
-  return Array.from({ length: count }, (_, i) => {
-    const t = count > 1 ? i / (count - 1) : 0;
-    const distance = length * t;
-    const positionVector = normalizedDirection.multiply(distance);
-    
-    return {
-      position: [
-        origin[0] + positionVector.x,
-        origin[1] + positionVector.y,
-        origin[2] + positionVector.z
-      ],
-      direction: [directionVector.x, directionVector.y, directionVector.z],
-      orientation: [orientationVector.x, orientationVector.y, orientationVector.z]
-    };
-  });
+  // Create a perpendicular vector to use as the plane normal
+  // This ensures our grid correctly aligns with the specified direction
+  const upVector = new Vector([0, 0, 1]);
+  let planeNormal;
+  
+  // Handle case where direction is parallel to upVector
+  if (Math.abs(normalizedDirection.dot(upVector)) > 0.99) {
+    planeNormal = new Vector([1, 0, 0]);
+  } else {
+    planeNormal = normalizedDirection.cross(upVector).normalized();
+  }
+  
+  // Create a plane with:
+  // - Origin at the start point
+  // - X direction along our desired direction vector
+  // - Normal perpendicular to our direction
+  const gridPlane = {
+    origin: origin,
+    xDirection: direction,
+    normal: [planeNormal.x, planeNormal.y, planeNormal.z]
+  };
+  
+  // Use rectangular grid with rowCount=1 to create a line
+  return createRectangularGrid(
+    gridPlane,
+    1,                      // 1 row
+    count,                  // columns = count of points
+    length / (count - 1),   // spacing to achieve desired length
+    0,                      // no vertical spacing needed
+    orientationX,
+    orientationY,
+    orientationZ
+  );
 }
 
 // Place models at specified points with orientation
