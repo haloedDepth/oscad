@@ -2,7 +2,9 @@ import { Plane, Vector, compoundShapes } from "replicad";
 import { createCuboid } from './cuboid.js';
 import { centerSelector, placeModelsAtPoints } from './diagonalPattern.js';
 
-export function createRectangularGrid(gridPlane, rowCount, colCount, xSpacing, ySpacing) {
+export function createRectangularGrid(gridPlane, rowCount, colCount, xSpacing, ySpacing, orientationX = 0, orientationY = 0, orientationZ = 1) {
+  const orientationVector = new Vector([orientationX, orientationY, orientationZ]).normalized();
+  
   return Array.from({ length: rowCount * colCount }, (_, index) => {
     const row = Math.floor(index / colCount);
     const col = index % colCount;
@@ -15,7 +17,11 @@ export function createRectangularGrid(gridPlane, rowCount, colCount, xSpacing, y
       new Vector(gridPlane.normal).normalized()
     );
     const worldPoint = plane.toWorldCoords([x, y, 0]);
-    return [worldPoint.x, worldPoint.y, worldPoint.z];
+    return {
+      position: [worldPoint.x, worldPoint.y, worldPoint.z],
+      direction: [gridPlane.normal[0], gridPlane.normal[1], gridPlane.normal[2]],
+      orientation: [orientationVector.x, orientationVector.y, orientationVector.z]
+    };
   });
 }
 
@@ -35,7 +41,10 @@ export function createRectangularCuboidGrid(
   ySpacing = 30,
   boxWidth = 10,
   boxDepth = 10,
-  boxHeight = 10
+  boxHeight = 10,
+  orientationX = 0,
+  orientationY = 0,
+  orientationZ = 1
 ) {
   return compoundShapes(
     placeModelsAtPoints(
@@ -50,7 +59,10 @@ export function createRectangularCuboidGrid(
         rowCount,
         colCount,
         xSpacing,
-        ySpacing
+        ySpacing,
+        orientationX,
+        orientationY,
+        orientationZ
       )
     )
   );

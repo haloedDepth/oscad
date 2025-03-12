@@ -4,7 +4,7 @@ import { createCuboid } from './cuboid.js';
 import { createSphere } from './sphere.js';
 import { createCylinder } from './cylinder.js';
 import { createEllipsoid } from './ellipsoid.js';
-import { createDiagonalCuboidPattern } from './diagonalPattern.js';
+import { createLinearCuboidPattern } from './diagonalPattern.js';
 import { createRectangularCuboidGrid } from './gridPattern.js';
 
 // Import validation utilities
@@ -17,6 +17,6 @@ export const modelFunctions = {
   "Sphere": withValidation(createSphere, modelSchemas["Sphere"]),
   "Cylinder": withValidation(createCylinder, modelSchemas["Cylinder"]),
   "Ellipsoid": withValidation(createEllipsoid, modelSchemas["Ellipsoid"]),
-  "DiagonalCuboidPattern": withValidation(createDiagonalCuboidPattern, modelSchemas["DiagonalCuboidPattern"]),
+  "DiagonalCuboidPattern": withValidation(createLinearCuboidPattern, modelSchemas["DiagonalCuboidPattern"]),
   "RectangularCuboidGrid": withValidation(createRectangularCuboidGrid, modelSchemas["RectangularCuboidGrid"])
 };
