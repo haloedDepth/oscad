@@ -5,8 +5,8 @@ import { createCuboid } from './cuboid.js';
 // Helper to select geometric center of a model
 export const centerSelector = (model) => model.boundingBox.center;
 
-// Create a Ray (positioned vector) with origin point and direction vector
-export function ray(origin, direction) {
+// Create a directedSegment (positioned vector) with origin point and direction vector
+export function directedSegment(origin, direction) {
   return {
     origin: origin,
     direction: direction
@@ -21,16 +21,16 @@ export function combine(...modelGenerators) {
   };
 }
 
-// Create points positioned along a ray
-export function createDiagonalPattern(ray, count) {
+// Create points positioned along a directedSegment
+export function createDiagonalPattern(directedSegment, count) {
   return Array.from({ length: count }, (_, i) => {
     const t = count > 1 ? i / (count - 1) : 0;
     // Convert direction array to Vector here internally
-    const targetPos = new Vector(ray.direction).multiply(t);
+    const targetPos = new Vector(directedSegment.direction).multiply(t);
     return [
-      ray.origin[0] + targetPos.x,
-      ray.origin[1] + targetPos.y,
-      ray.origin[2] + targetPos.z
+      directedSegment.origin[0] + targetPos.x,
+      directedSegment.origin[1] + targetPos.y,
+      directedSegment.origin[2] + targetPos.z
     ];
   });
 }
@@ -66,7 +66,7 @@ export function createDiagonalCuboidPattern(
       () => createCuboid(boxWidth, boxDepth, boxHeight),
       centerSelector,
       createDiagonalPattern(
-        ray(
+        directedSegment(
           [originX, originY, originZ],
           [vectorX, vectorY, vectorZ]
         ),
