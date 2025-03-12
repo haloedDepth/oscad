@@ -166,7 +166,11 @@ export default function App() {
       <div style={{ flex: 1 }}>
         {mesh ? (
           <ThreeContext>
-            <ReplicadMesh edges={mesh.edges} faces={mesh.faces} />
+            <ReplicadMesh 
+              edges={mesh.edges} 
+              faces={mesh.faces} 
+              helperSpaces={mesh.helperSpaces || []} 
+            />
           </ThreeContext>
         ) : (
           <div style={{ 

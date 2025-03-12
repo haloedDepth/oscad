@@ -1,4 +1,4 @@
-import React, { useRef, useLayoutEffect, useEffect } from "react";
+import React, { useRef, useLayoutEffect, useEffect, useState } from "react";
 import { useThree } from "@react-three/fiber";
 import { BufferGeometry } from "three";
 import {
@@ -7,19 +7,32 @@ import {
   syncLinesFromFaces,
 } from "replicad-threejs-helper";
 
-export default React.memo(function ShapeMeshes({ faces, edges }) {
+export default React.memo(function ShapeMeshes({ faces, edges, helperSpaces = [] }) {
   const { invalidate } = useThree();
-
+  const [helperGeometries, setHelperGeometries] = useState([]);
+  
   const body = useRef(new BufferGeometry());
   const lines = useRef(new BufferGeometry());
 
-  useLayoutEffect(() => {
-    // Log what we're receiving to help debug
-    console.log("[DEBUG] ReplicadMesh received faces:", faces ? Object.keys(faces) : "null");
-    console.log("[DEBUG] ReplicadMesh received edges:", edges ? Object.keys(edges) : "null");
+  // Initialize or update helper geometries
+  useEffect(() => {
+    // Clean up previous geometries if needed
+    helperGeometries.forEach(geo => {
+      geo.body.dispose();
+      geo.lines.dispose();
+    });
+    
+    // Create new geometries for each helper space
+    const newGeometries = helperSpaces.map(() => ({
+      body: new BufferGeometry(),
+      lines: new BufferGeometry()
+    }));
+    
+    setHelperGeometries(newGeometries);
+  }, [helperSpaces.length]);
 
-    // We use the three helpers to synchronise the buffer geometry with the
-    // new data from the parameters
+  useLayoutEffect(() => {
+    // Main model
     if (faces) {
       try {
         console.time('[PERF] syncFaces');
@@ -48,24 +61,38 @@ export default React.memo(function ShapeMeshes({ faces, edges }) {
       }
     }
 
-    // We have configured the canvas to only refresh when there is a change,
-    // the invalidate function is here to tell it to recompute
-    invalidate();
-  }, [faces, edges, invalidate]);
+    // Helper spaces (only sync if geometries are available)
+    if (helperGeometries.length === helperSpaces.length) {
+      helperSpaces.forEach((helper, index) => {
+        if (helper.faces) {
+          syncFaces(helperGeometries[index].body, helper.faces);
+        }
+        if (helper.edges) {
+          syncLines(helperGeometries[index].lines, helper.edges);
+        } else if (helper.faces) {
+          syncLinesFromFaces(helperGeometries[index].lines, helperGeometries[index].body);
+        }
+      });
+    }
 
-  useEffect(
-    () => () => {
+    invalidate();
+  }, [faces, edges, helperSpaces, helperGeometries, invalidate]);
+
+  useEffect(() => {
+    return () => {
       body.current.dispose();
       lines.current.dispose();
-      invalidate();
-    },
-    [invalidate]
-  );
+      helperGeometries.forEach(geo => {
+        geo.body.dispose();
+        geo.lines.dispose();
+      });
+    };
+  }, [helperGeometries]);
 
   return (
     <group>
+      {/* Main model */}
       <mesh geometry={body.current}>
-        {/* the offsets are here to avoid z fighting between the mesh and the lines */}
         <meshStandardMaterial
           color="#5a8296"
           polygonOffset
@@ -76,6 +103,28 @@ export default React.memo(function ShapeMeshes({ faces, edges }) {
       <lineSegments geometry={lines.current}>
         <lineBasicMaterial color="#3c5a6e" />
       </lineSegments>
+
+      {/* Helper spaces - only render if geometries are available */}
+      {helperGeometries.length === helperSpaces.length && 
+        helperGeometries.map((geo, index) => (
+          <group key={`helper-${index}`}>
+            <mesh geometry={geo.body}>
+              <meshStandardMaterial
+                color="#ff0000"
+                transparent={true}
+                opacity={0.3}
+                depthWrite={false}
+                polygonOffset
+                polygonOffsetFactor={1.0}
+                polygonOffsetUnits={1.0}
+              />
+            </mesh>
+            <lineSegments geometry={geo.lines}>
+              <lineBasicMaterial color="#ff0000" />
+            </lineSegments>
+          </group>
+        ))
+      }
     </group>
   );
 });

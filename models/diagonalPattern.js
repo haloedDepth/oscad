@@ -1,5 +1,5 @@
 // models/linearPattern.js
-import { Vector, Plane, compoundShapes } from "replicad";
+import { Vector, compoundShapes } from "replicad";
 import { createCuboid } from './cuboid.js';
 import { createRectangularGrid } from './gridPattern.js';
 
@@ -16,39 +16,23 @@ export function combine(...modelGenerators) {
 
 // Create points with orientation along a line using the grid pattern under the hood
 export function createLinearPattern(origin, direction, count, orientationX = 0, orientationY = 0, orientationZ = 1) {
-  const directionVector = new Vector(direction);
-  const length = directionVector.Length;
-  const normalizedDirection = directionVector.normalized();
-  
-  // Create a perpendicular vector to use as the plane normal
-  // This ensures our grid correctly aligns with the specified direction
-  const upVector = new Vector([0, 0, 1]);
-  let planeNormal;
-  
-  // Handle case where direction is parallel to upVector
-  if (Math.abs(normalizedDirection.dot(upVector)) > 0.99) {
-    planeNormal = new Vector([1, 0, 0]);
-  } else {
-    planeNormal = normalizedDirection.cross(upVector).normalized();
-  }
-  
-  // Create a plane with:
-  // - Origin at the start point
-  // - X direction along our desired direction vector
-  // - Normal perpendicular to our direction
-  const gridPlane = {
-    origin: origin,
-    xDirection: direction,
-    normal: [planeNormal.x, planeNormal.y, planeNormal.z]
-  };
-  
-  // Use rectangular grid with rowCount=1 to create a line
   return createRectangularGrid(
-    gridPlane,
-    1,                      // 1 row
-    count,                  // columns = count of points
-    length / (count - 1),   // spacing to achieve desired length
-    0,                      // no vertical spacing needed
+    {
+      origin: origin,
+      xDirection: direction,
+      normal: (() => {
+        const dirVector = new Vector(direction);
+        const upVector = new Vector([0, 0, 1]);
+        const planeNormal = Math.abs(dirVector.normalized().dot(upVector)) > 0.99 
+          ? new Vector([1, 0, 0]) 
+          : dirVector.cross(upVector).normalized();
+        return [planeNormal.x, planeNormal.y, planeNormal.z];
+      })()
+    },
+    1,                                                            // 1 row
+    count,                                                        // columns = count of points
+    count > 1 ? new Vector(direction).Length / (count - 1) : 0,   // spacing to achieve desired length
+    0,                                                            // no vertical spacing
     orientationX,
     orientationY,
     orientationZ

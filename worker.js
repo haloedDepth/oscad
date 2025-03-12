@@ -43,18 +43,54 @@ function createMesh(modelName, params) {
       };
     }
     
+    // Handle if the result includes both main model and helper spaces
+    if (result && result.main && Array.isArray(result.helperSpaces)) {
+      const mainModel = result.main;
+      const helperSpaces = result.helperSpaces;
+      
+      // Set tessellation parameters based on model type
+      let meshOptions = {};
+      if (modelName.includes("Sphere") || modelName.includes("Ellipsoid")) {
+        meshOptions = { 
+          tolerance: 0.1,
+          angularTolerance: 15
+        };
+      }
+      
+      // Generate main model mesh
+      console.time(`[PERF] ${modelName} main model generation`);
+      const faces = mainModel.mesh(meshOptions);
+      const edges = mainModel.meshEdges(meshOptions);
+      console.timeEnd(`[PERF] ${modelName} main model generation`);
+      
+      // Generate helper spaces meshes
+      console.time(`[PERF] ${modelName} helper spaces generation`);
+      const helperMeshes = helperSpaces.map(helper => {
+        return {
+          faces: helper.mesh(meshOptions),
+          edges: helper.meshEdges(meshOptions)
+        };
+      });
+      console.timeEnd(`[PERF] ${modelName} helper spaces generation`);
+      
+      console.timeEnd(`[PERF] Total ${modelName} creation`);
+      
+      // Return both main model and helper spaces
+      return {
+        faces: faces,
+        edges: edges,
+        helperSpaces: helperMeshes
+      };
+    }
+    
+    // Regular case - just a single model
     // Set tessellation parameters based on model type
-    // For spheres and ellipsoids, use much coarser mesh settings
     let meshOptions = {};
     if (modelName === "Sphere" || modelName === "Ellipsoid") {
-      // Use significantly reduced detail for curved surfaces
-      // Increase tolerance (less precision, fewer triangles)
-      // Increase angular tolerance (fewer segments for curved sections)
       meshOptions = { 
-        tolerance: 0.1,           // Default is 1e-3 (0.001)
-        angularTolerance: 15      // Default is 0.1 (degrees)
+        tolerance: 0.1,
+        angularTolerance: 15
       };
-      console.log(`[INFO] Using optimized mesh settings for ${modelName}`);
     }
     
     // Generate and time mesh operations
@@ -62,7 +98,6 @@ function createMesh(modelName, params) {
     const faces = result.mesh(meshOptions);
     console.timeEnd(`[PERF] ${modelName} faces generation`);
     
-    // Log mesh details for debugging
     if (faces && faces.triangles) {
       console.log(`[INFO] ${modelName} triangles: ${faces.triangles.length/3}, vertices: ${faces.vertices.length/3}`);
     }
