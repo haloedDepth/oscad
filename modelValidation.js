@@ -46,5 +46,9 @@ export const modelSchemas = {
   "Drill": [
     // Validate all dimension parameters are positive numbers
     validateAll(isPositive, 'bottomRadius', 'topRadius', 'frustumHeight', 'cylinderHeight')
+  ],
+  "Staircase": [
+    // Validate width is positive
+    validateAll(isPositive, 'width')
   ]
 };
