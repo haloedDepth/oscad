@@ -30,7 +30,6 @@ export const modelSchemas = {
   ],
   "RectangularCuboidGrid": [
     // Validate grid parameters
-    validateAll(isNumber, 'originX', 'originY', 'originZ', 'directionX', 'directionY', 'directionZ', 'normalX', 'normalY', 'normalZ'),
     validateAll(isPositive, 'rowCount', 'colCount', 'xSpacing', 'ySpacing', 'boxWidth', 'boxDepth', 'boxHeight')
   ],
   "LProfile": [
@@ -42,8 +41,6 @@ export const modelSchemas = {
   ],
   "Frustum": [
     // Validate radius and height parameters are positive
-    validateAll(isPositive, 'bottomRadius', 'topRadius', 'height'),
-    // Validate location and segments parameters are numbers
-    validateAll(isNumber, 'locationX', 'locationY', 'locationZ', 'segments')
+    validateAll(isPositive, 'bottomRadius', 'topRadius', 'height')
   ]
 };

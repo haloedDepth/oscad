@@ -48,14 +48,12 @@ function createMesh(modelName, params) {
       const mainModel = result.main;
       const helperSpaces = result.helperSpaces;
       
-      // Set tessellation parameters based on model type
-      let meshOptions = {};
-      if (modelName.includes("Sphere") || modelName.includes("Ellipsoid")) {
-        meshOptions = { 
-          tolerance: 0.1,
-          angularTolerance: 15
-        };
-      }
+      // Apply universal tessellation parameters to all models
+      // This controls the precision vs performance tradeoff
+      const meshOptions = { 
+        tolerance: 0.1,          // Maximum distance between real surface and its triangulation
+        angularTolerance: 15     // Maximum angle between adjacent segments (in degrees)
+      };
       
       // Generate main model mesh
       console.time(`[PERF] ${modelName} main model generation`);
@@ -84,14 +82,11 @@ function createMesh(modelName, params) {
     }
     
     // Regular case - just a single model
-    // Set tessellation parameters based on model type
-    let meshOptions = {};
-    if (modelName === "Sphere" || modelName === "Ellipsoid") {
-      meshOptions = { 
-        tolerance: 0.1,
-        angularTolerance: 15
-      };
-    }
+    // Apply universal tessellation parameters to all models instead of just for specific ones
+    const meshOptions = { 
+      tolerance: 0.1,          // Maximum distance between real surface and its triangulation
+      angularTolerance: 15     // Maximum angle between adjacent segments (in degrees)
+    };
     
     // Generate and time mesh operations
     console.time(`[PERF] ${modelName} faces generation`);

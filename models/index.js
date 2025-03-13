@@ -7,7 +7,7 @@ import { createEllipsoid } from './ellipsoid.js';
 import { createLinearCuboidPattern } from './diagonalPattern.js';
 import { createRectangularCuboidGrid } from './gridPattern.js';
 import { createLProfile } from './lProfile.js';
-import { createFrustum } from './frustum.js';  // Add new import
+import { createFrustum } from './frustum.js';
 
 // Import validation utilities
 import { withValidation } from "../validator.js";
@@ -23,5 +23,5 @@ export const modelFunctions = {
   "DiagonalCuboidPattern": withValidation(createLinearCuboidPattern, modelSchemas["DiagonalCuboidPattern"]),
   "RectangularCuboidGrid": withValidation(createRectangularCuboidGrid, modelSchemas["RectangularCuboidGrid"]),
   "LProfile": withValidation(createLProfile, modelSchemas["LProfile"]),
-  "Frustum": withValidation(createFrustum, modelSchemas["Frustum"])  // Add new model
+  "Frustum": withValidation(createFrustum, modelSchemas["Frustum"])
 };
