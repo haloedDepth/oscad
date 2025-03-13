@@ -39,5 +39,11 @@ export const modelSchemas = {
     // Validate thickness is less than flange dimensions
     (params) => lessThan(params, 'thickness', params.flange1Width),
     (params) => lessThan(params, 'thickness', params.flange2Width)
+  ],
+  "Frustum": [
+    // Validate radius and height parameters are positive
+    validateAll(isPositive, 'bottomRadius', 'topRadius', 'height'),
+    // Validate location and segments parameters are numbers
+    validateAll(isNumber, 'locationX', 'locationY', 'locationZ', 'segments')
   ]
 };
