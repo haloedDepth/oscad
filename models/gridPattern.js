@@ -1,30 +1,33 @@
-import { Plane, Vector, compoundShapes } from "replicad";
+// models/gridPattern.js
+import { compoundShapes } from "replicad";
 import { createCuboid } from './cuboid.js';
-import { centerSelector, placeModelsAtPoints } from './diagonalPattern.js';
+import { centerSelector } from '../helpers/selectors.js';
+import { placeModelsAtPoints } from '../helpers/positioning.js';
+import { createRectangularGrid } from '../helpers/pattern.js';
 
-export function createRectangularGrid(gridPlane, rowCount, colCount, xSpacing, ySpacing, orientationX = 0, orientationY = 0, orientationZ = 1) {
-  const orientationVector = new Vector([orientationX, orientationY, orientationZ]).normalized();
-  
-  return Array.from({ length: rowCount * colCount }, (_, index) => {
-    const row = Math.floor(index / colCount);
-    const col = index % colCount;
-    const x = col * xSpacing;
-    const y = row * ySpacing;
-    // Create plane inline for single return statement
-    const plane = new Plane(
-      new Vector(gridPlane.origin),
-      new Vector(gridPlane.xDirection).normalized(),
-      new Vector(gridPlane.normal).normalized()
-    );
-    const worldPoint = plane.toWorldCoords([x, y, 0]);
-    return {
-      position: [worldPoint.x, worldPoint.y, worldPoint.z],
-      direction: [gridPlane.normal[0], gridPlane.normal[1], gridPlane.normal[2]],
-      orientation: [orientationVector.x, orientationVector.y, orientationVector.z]
-    };
-  });
-}
-
+/**
+ * Creates a rectangular grid of cuboids
+ * @param {number} originX - X component of grid origin
+ * @param {number} originY - Y component of grid origin
+ * @param {number} originZ - Z component of grid origin
+ * @param {number} directionX - X component of grid x-direction
+ * @param {number} directionY - Y component of grid x-direction
+ * @param {number} directionZ - Z component of grid x-direction
+ * @param {number} normalX - X component of grid normal
+ * @param {number} normalY - Y component of grid normal
+ * @param {number} normalZ - Z component of grid normal
+ * @param {number} rowCount - Number of rows
+ * @param {number} colCount - Number of columns
+ * @param {number} xSpacing - Spacing between columns
+ * @param {number} ySpacing - Spacing between rows
+ * @param {number} boxWidth - Width of each cuboid
+ * @param {number} boxDepth - Depth of each cuboid
+ * @param {number} boxHeight - Height of each cuboid
+ * @param {number} orientationX - X component of orientation vector
+ * @param {number} orientationY - Y component of orientation vector
+ * @param {number} orientationZ - Z component of orientation vector
+ * @returns {Object} Combined solid of all cuboids
+ */
 export function createRectangularCuboidGrid(
   originX = 0,
   originY = 0,
