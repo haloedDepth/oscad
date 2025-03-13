@@ -42,5 +42,9 @@ export const modelSchemas = {
   "Frustum": [
     // Validate radius and height parameters are positive
     validateAll(isPositive, 'bottomRadius', 'topRadius', 'height')
+  ],
+  "Drill": [
+    // Validate all dimension parameters are positive numbers
+    validateAll(isPositive, 'bottomRadius', 'topRadius', 'frustumHeight', 'cylinderHeight')
   ]
 };
