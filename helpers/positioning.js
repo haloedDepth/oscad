@@ -46,15 +46,11 @@ export function placeModelsAtPoints(modelCreator, referenceSelector, pointsWithO
 
 /**
  * Creates and positions two models, with the top model placed on the bottom model
- * @param {Function} bottomModelCreator - Function that creates the bottom model
- * @param {Function} topModelCreator - Function that creates the top model
+ * @param {Object} bottomObject - The bottom model instance
+ * @param {Object} topObject - The top model instance
  * @returns {Array} Array containing [bottomObject, positionedTopObject]
  */
-export function placeOnTop(bottomModelCreator, topModelCreator) {
-  // Create the models
-  const bottomObject = bottomModelCreator();
-  const topObject = topModelCreator();
-  
+export function placeOnTop(bottomObject, topObject) {
   // Get bottom object's bounding box info
   const bottomBounds = bottomObject.boundingBox.bounds;
   const bottomCenter = centerSelector(bottomObject);

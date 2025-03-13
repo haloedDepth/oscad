@@ -11,10 +11,13 @@ import { placeOnTop } from '../helpers/positioning.js';
  * @returns {Object} Staircase model
  */
 export function createStaircase(width = 100) {
-  return compoundShapes(
-    placeOnTop(
-      () => createCuboid(width, 200, 5),  // bottom model creator
-      () => createCuboid(width, 280, 5)   // top model creator
-    )
-  );
+  // Create model instances explicitly
+  const bottomCuboid = createCuboid(width, 200, 5);
+  const topCuboid = createCuboid(width, 280, 5);
+  
+  // Position the top cuboid on the bottom cuboid
+  const positioned = placeOnTop(bottomCuboid, topCuboid);
+  
+  // Combine the positioned objects
+  return compoundShapes(positioned);
 }
