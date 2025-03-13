@@ -32,5 +32,12 @@ export const modelSchemas = {
     // Validate grid parameters
     validateAll(isNumber, 'originX', 'originY', 'originZ', 'directionX', 'directionY', 'directionZ', 'normalX', 'normalY', 'normalZ'),
     validateAll(isPositive, 'rowCount', 'colCount', 'xSpacing', 'ySpacing', 'boxWidth', 'boxDepth', 'boxHeight')
+  ],
+  "LProfile": [
+    // Validate all parameters are positive numbers
+    validateAll(isPositive, 'length', 'flange1Width', 'flange2Width', 'thickness'),
+    // Validate thickness is less than flange dimensions
+    (params) => lessThan(params, 'thickness', params.flange1Width),
+    (params) => lessThan(params, 'thickness', params.flange2Width)
   ]
 };
