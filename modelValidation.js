@@ -50,5 +50,13 @@ export const modelSchemas = {
   "Staircase": [
     // Validate width is positive
     validateAll(isPositive, 'width')
+  ],
+  "MatedCuboidL": [
+    // Validate all dimension parameters are positive numbers
+    validateAll(isPositive, 'cuboidWidth', 'cuboidDepth', 'cuboidHeight', 'lLength', 'lFlange1Width', 'lFlange2Width', 'lThickness'),
+    // Validate thickness is less than flange dimensions
+    (params) => lessThan(params, 'lThickness', params.lFlange1Width),
+    (params) => lessThan(params, 'lThickness', params.lFlange2Width)
+    // Note: We don't validate face names here as they're handled explicitly in the model function
   ]
 };
