@@ -93,7 +93,7 @@ export function calculateMateTransformation(model1, face1, model2, face2) {
   return {
     rotationAxis,
     rotationAngle,
-    translationVector: finalTranslationVector
+    translationVector
   };
 }
 
@@ -108,51 +108,31 @@ export function calculateMateTransformation(model1, face1, model2, face2) {
 export function mateBoundingBoxFaces(fixedModel, fixedFace, movingModel, movingFace) {
   console.log(`[DEBUG] mateBoundingBoxFaces - fixedModel id: ${fixedModel.id || 'unknown'}, fixedFace: ${fixedFace}`);
   console.log(`[DEBUG] mateBoundingBoxFaces - movingModel id: ${movingModel.id || 'unknown'}, movingFace: ${movingFace}`);
-  console.log(`[DEBUG] mateBoundingBoxFaces - fixedModel bounding box: ${JSON.stringify(fixedModel.boundingBox.bounds)}`);
-  console.log(`[DEBUG] mateBoundingBoxFaces - movingModel bounding box: ${JSON.stringify(movingModel.boundingBox.bounds)}`);
   
   const { rotationAxis, rotationAngle, translationVector } = 
     calculateMateTransformation(fixedModel, fixedFace, movingModel, movingFace);
   
-  console.log(`[DEBUG] mateBoundingBoxFaces - rotationAxis: [${rotationAxis.x}, ${rotationAxis.y}, ${rotationAxis.z}], length: ${rotationAxis.Length}`);
-  console.log(`[DEBUG] mateBoundingBoxFaces - rotationAngle: ${rotationAngle}`);
-  console.log(`[DEBUG] mateBoundingBoxFaces - translationVector: [${translationVector.x}, ${translationVector.y}, ${translationVector.z}]`);
-  
-  // Apply transformations to movingModel
   let transformedModel = movingModel;
   
-  // First rotate if needed
   if (rotationAngle !== 0 && rotationAxis.Length > 1e-10) {
     console.log(`[DEBUG] mateBoundingBoxFaces - Applying rotation`);
     
-    const center = movingModel.boundingBox.center;
-    console.log(`[DEBUG] mateBoundingBoxFaces - Rotation center: [${center[0]}, ${center[1]}, ${center[2]}]`);
+    // Get moving face's center before transformations
+    const movingFaceCenter = getFaceCenter(movingModel.boundingBox, movingFace);
+    console.log(`[DEBUG] mateBoundingBoxFaces - Rotation center (face): [${movingFaceCenter.x}, ${movingFaceCenter.y}, ${movingFaceCenter.z}]`);
     
     transformedModel = transformedModel.rotate(
       rotationAngle,
-      center,
+      [movingFaceCenter.x, movingFaceCenter.y, movingFaceCenter.z],
       [rotationAxis.x, rotationAxis.y, rotationAxis.z]
     );
-    
-    console.log(`[DEBUG] mateBoundingBoxFaces - After rotation, new bounds: ${JSON.stringify(transformedModel.boundingBox.bounds)}`);
-  } else {
-    if (rotationAngle !== 0) {
-      console.warn(`[WARN] mateBoundingBoxFaces - Rotation SKIPPED because rotation axis is too short: ${rotationAxis.Length}`);
-    } else {
-      console.log(`[DEBUG] mateBoundingBoxFaces - No rotation needed (angle is 0)`);
-    }
   }
-  
-  // Then translate
-  console.log(`[DEBUG] mateBoundingBoxFaces - Applying translation: [${translationVector.x}, ${translationVector.y}, ${translationVector.z}]`);
   
   transformedModel = transformedModel.translate([
     translationVector.x,
     translationVector.y,
     translationVector.z
   ]);
-  
-  console.log(`[DEBUG] mateBoundingBoxFaces - After translation, new bounds: ${JSON.stringify(transformedModel.boundingBox.bounds)}`);
   
   return transformedModel;
 }

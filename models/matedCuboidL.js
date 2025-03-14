@@ -29,7 +29,7 @@ export function createMatedCuboidL(
   lFlange2Width = 50,
   lThickness = 5,
   cuboidFaceName = "LEFT",
-  lProfileFaceName = "TOP",
+  lProfileFaceName = "LEFT",
   offsetDistance = 0
 ) {
   console.log(`[DEBUG] createMatedCuboidL - Parameters:`);
