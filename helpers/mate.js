@@ -5,7 +5,9 @@ import {
   angleBetweenVectors, 
   calculateRotationAxis, 
   areVectorsAntiParallel,
-  distanceToPlane
+  areVectorsParallel,
+  distanceToPlane,
+  findPerpendicularVector
 } from "./math.js";
 
 /**
@@ -50,13 +52,19 @@ export function calculateMateTransformation(model1, face1, model2, face2) {
     rotationAngle = angleBetweenVectors(normal2, targetNormal);
     console.log(`[DEBUG] calculateMateTransformation - Rotation angle: ${rotationAngle} degrees`);
     
-    rotationAxis = calculateRotationAxis(normal2, targetNormal);
-    console.log(`[DEBUG] calculateMateTransformation - Rotation axis: [${rotationAxis.x}, ${rotationAxis.y}, ${rotationAxis.z}], length: ${rotationAxis.Length}`);
-    
-    // Check if rotation axis is valid (non-zero length)
-    if (rotationAxis.Length < 1e-10) {
-      console.warn(`[WARN] calculateMateTransformation - Rotation axis has zero length! This happens with parallel normals in same direction.`);
+    if (Math.abs(rotationAngle) < 1e-10) {
+      console.log(`[DEBUG] calculateMateTransformation - Angle too small, not rotating`);
+      rotationAxis = new Vector([0, 0, 0]);
+      rotationAngle = 0;
+    } else if (Math.abs(Math.abs(rotationAngle) - 180) < 1e-10) {
+      // For 180-degree rotations, we need a perpendicular axis
+      console.log(`[DEBUG] calculateMateTransformation - 180 degree rotation needed, finding perpendicular axis`);
+      rotationAxis = findPerpendicularVector(normal2);
+    } else {
+      rotationAxis = calculateRotationAxis(normal2, targetNormal);
     }
+    
+    console.log(`[DEBUG] calculateMateTransformation - Rotation axis: [${rotationAxis.x}, ${rotationAxis.y}, ${rotationAxis.z}], length: ${rotationAxis.Length}`);
   }
   
   // Calculate translation to align face centers
@@ -66,17 +74,17 @@ export function calculateMateTransformation(model1, face1, model2, face2) {
   console.log(`[DEBUG] calculateMateTransformation - center1: [${center1.x}, ${center1.y}, ${center1.z}]`);
   console.log(`[DEBUG] calculateMateTransformation - center2: [${center2.x}, ${center2.y}, ${center2.z}]`);
   
-  // Calculate the translation vector
-  // Need to offset in the direction of normal1 by the distance between faces
+  // Calculate the translation vector to align centers
   const translationVector = center1.sub(center2);
-  
   console.log(`[DEBUG] calculateMateTransformation - initial translation vector: [${translationVector.x}, ${translationVector.y}, ${translationVector.z}]`);
   
-  // Adjust translation to make faces flush
+  // Calculate the distance between faces to make them flush
   const distanceToMove = distanceToPlane(center2, center1, normal1);
   console.log(`[DEBUG] calculateMateTransformation - distance to move: ${distanceToMove}`);
   
-  const adjustmentVector = normal1.multiply(distanceToMove);
+  // Critical fix: Reverse the sign of distanceToMove for proper face alignment
+  // This is the key fix that resolves the issue of objects being buried
+  const adjustmentVector = normal1.multiply(-distanceToMove);
   console.log(`[DEBUG] calculateMateTransformation - adjustment vector: [${adjustmentVector.x}, ${adjustmentVector.y}, ${adjustmentVector.z}]`);
   
   const finalTranslationVector = translationVector.add(adjustmentVector);

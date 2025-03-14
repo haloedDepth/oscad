@@ -17,6 +17,41 @@ export function angleBetweenVectors(v1, v2) {
 }
 
 /**
+ * Find a vector perpendicular to the given vector
+ * @param {Vector} vec - Vector to find perpendicular to
+ * @returns {Vector} A vector perpendicular to the input vector
+ */
+export function findPerpendicularVector(vec) {
+  console.log(`[DEBUG] findPerpendicularVector - input vector: [${vec.x}, ${vec.y}, ${vec.z}]`);
+  
+  const v = vec.normalized();
+  
+  // Choose the component with the smallest absolute value to set to zero
+  const absX = Math.abs(v.x);
+  const absY = Math.abs(v.y);
+  const absZ = Math.abs(v.z);
+  
+  let perpendicular;
+  
+  if (absX <= absY && absX <= absZ) {
+    // X is smallest, set it to 0 and swap Y and Z with one negated
+    perpendicular = new Vector([0, v.z, -v.y]);
+  } else if (absY <= absX && absY <= absZ) {
+    // Y is smallest, set it to 0 and swap X and Z with one negated
+    perpendicular = new Vector([v.z, 0, -v.x]);
+  } else {
+    // Z is smallest, set it to 0 and swap X and Y with one negated
+    perpendicular = new Vector([v.y, -v.x, 0]);
+  }
+  
+  // Normalize the perpendicular vector
+  const result = perpendicular.normalized();
+  console.log(`[DEBUG] findPerpendicularVector - perpendicular vector: [${result.x}, ${result.y}, ${result.z}]`);
+  
+  return result;
+}
+
+/**
  * Calculate the rotation axis to align vector v1 with vector v2
  * @param {Vector} v1 - Vector to rotate
  * @param {Vector} v2 - Target vector
@@ -25,8 +60,20 @@ export function angleBetweenVectors(v1, v2) {
 export function calculateRotationAxis(v1, v2) {
   console.log(`[DEBUG] calculateRotationAxis - v1: [${v1.x}, ${v1.y}, ${v1.z}], v2: [${v2.x}, ${v2.y}, ${v2.z}]`);
   
+  // Check if vectors are parallel (or anti-parallel)
+  if (areVectorsParallel(v1, v2)) {
+    console.log(`[DEBUG] calculateRotationAxis - Vectors are parallel, finding arbitrary perpendicular axis`);
+    return findPerpendicularVector(v1);
+  }
+  
   const crossProduct = v1.cross(v2);
   console.log(`[DEBUG] calculateRotationAxis - Cross product before normalization: [${crossProduct.x}, ${crossProduct.y}, ${crossProduct.z}], length: ${crossProduct.Length}`);
+  
+  // Check if cross product is too small
+  if (crossProduct.Length < 1e-10) {
+    console.log(`[DEBUG] calculateRotationAxis - Cross product too small, using arbitrary perpendicular axis`);
+    return findPerpendicularVector(v1);
+  }
   
   const normalized = crossProduct.normalized();
   console.log(`[DEBUG] calculateRotationAxis - Normalized rotation axis: [${normalized.x}, ${normalized.y}, ${normalized.z}], length: ${normalized.Length}`);
