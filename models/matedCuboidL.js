@@ -29,7 +29,7 @@ export function createMatedCuboidL(
   lFlange2Width = 50,
   lThickness = 5,
   cuboidFaceName = "LEFT",
-  lProfileFaceName = "LEFT",
+  lProfileFaceName = "RIGHT",
   offsetDistance = 0
 ) {
   console.log(`[DEBUG] createMatedCuboidL - Parameters:`);
@@ -85,7 +85,8 @@ export function createMatedCuboidL(
   // Apply offset if specified
   if (offsetDistance !== 0) {
     console.log(`[DEBUG] createMatedCuboidL - Applying offset of ${offsetDistance}`);
-    matedLProfile = offsetMatedModel(matedLProfile, lProfileFace, offsetDistance);
+    // Pass the cuboid face to the offset function for consistent behavior
+    matedLProfile = offsetMatedModel(matedLProfile, lProfileFace, offsetDistance, cuboidFace);
     console.log(`[DEBUG] createMatedCuboidL - Offset L-profile bounds: ${JSON.stringify(matedLProfile.boundingBox.bounds)}`);
   } else {
     console.log(`[DEBUG] createMatedCuboidL - No offset applied (offsetDistance = 0)`);

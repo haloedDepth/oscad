@@ -164,20 +164,27 @@ export function autoMateBoundingBoxes(fixedModel, movingModel, preferLarger = tr
  * @param {Object} model - The mated model
  * @param {string} face - The face that was mated
  * @param {number} distance - Distance to offset
+ * @param {string} fixedFace - The face of the fixed model that was used for mating
  * @returns {Object} Offset model
  */
-export function offsetMatedModel(model, face, distance) {
+export function offsetMatedModel(model, face, distance, fixedFace) {
   console.log(`[DEBUG] offsetMatedModel - model id: ${model.id || 'unknown'}, face: ${face}, distance: ${distance}`);
+  console.log(`[DEBUG] offsetMatedModel - fixedFace: ${fixedFace}`);
   console.log(`[DEBUG] offsetMatedModel - model bounding box: ${JSON.stringify(model.boundingBox.bounds)}`);
   
-  const normal = getFaceNormal(face).multiply(-1); // Move away from the face
-  console.log(`[DEBUG] offsetMatedModel - face normal: [${normal.x}, ${normal.y}, ${normal.z}]`);
-  console.log(`[DEBUG] offsetMatedModel - offset vector: [${normal.x * distance}, ${normal.y * distance}, ${normal.z * distance}]`);
+  // Use the fixed model's face normal for consistent behavior
+  const fixedNormal = getFaceNormal(fixedFace);
+  console.log(`[DEBUG] offsetMatedModel - fixed face normal: [${fixedNormal.x}, ${fixedNormal.y}, ${fixedNormal.z}]`);
+  
+  // Offset in the direction of the fixed normal for positive distances
+  // This ensures consistent behavior regardless of which faces are mated
+  const offsetVector = fixedNormal.multiply(distance);
+  console.log(`[DEBUG] offsetMatedModel - offset vector: [${offsetVector.x}, ${offsetVector.y}, ${offsetVector.z}]`);
   
   const offsetModel = model.translate([
-    normal.x * distance,
-    normal.y * distance,
-    normal.z * distance
+    offsetVector.x,
+    offsetVector.y,
+    offsetVector.z
   ]);
   
   console.log(`[DEBUG] offsetMatedModel - After offset, new bounds: ${JSON.stringify(offsetModel.boundingBox.bounds)}`);
