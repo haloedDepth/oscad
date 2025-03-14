@@ -15,6 +15,20 @@ export function createLProfile(
   flange2Width = 50,
   thickness = 5
 ) {
-  return makeBox([0, 0, 0], [flange1Width, thickness, length])
-    .fuse(makeBox([0, 0, 0], [thickness, flange2Width, length]));
+  console.log(`[DEBUG] createLProfile - Input parameters: length=${length}, flange1Width=${flange1Width}, flange2Width=${flange2Width}, thickness=${thickness}`);
+
+  // Create horizontal flange (along x-axis)
+  const horizontalFlange = makeBox([0, 0, 0], [flange1Width, thickness, length]);
+  console.log(`[DEBUG] createLProfile - Horizontal flange bounds: ${JSON.stringify(horizontalFlange.boundingBox.bounds)}`);
+  
+  // Create vertical flange (along y-axis)
+  const verticalFlange = makeBox([0, 0, 0], [thickness, flange2Width, length]);
+  console.log(`[DEBUG] createLProfile - Vertical flange bounds: ${JSON.stringify(verticalFlange.boundingBox.bounds)}`);
+  
+  // Fuse the two flanges
+  const lProfile = horizontalFlange.fuse(verticalFlange);
+  console.log(`[DEBUG] createLProfile - Combined L-profile bounds: ${JSON.stringify(lProfile.boundingBox.bounds)}`);
+  console.log(`[DEBUG] createLProfile - L-profile center: ${JSON.stringify(lProfile.boundingBox.center)}`);
+  
+  return lProfile;
 }
