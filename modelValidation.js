@@ -47,10 +47,6 @@ export const modelSchemas = {
     // Validate all dimension parameters are positive numbers
     validateAll(isPositive, 'bottomRadius', 'topRadius', 'frustumHeight', 'cylinderHeight')
   ],
-  "Staircase": [
-    // Validate width is positive
-    validateAll(isPositive, 'width')
-  ],
   "MatedCuboidL": [
     // Validate all dimension parameters are positive numbers
     validateAll(isPositive, 'cuboidWidth', 'cuboidDepth', 'cuboidHeight', 'lLength', 'lFlange1Width', 'lFlange2Width', 'lThickness'),
