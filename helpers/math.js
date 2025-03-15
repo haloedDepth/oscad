@@ -28,59 +28,7 @@ export function findPerpendicularVector(vec) {
   }
   
   // Normalize the perpendicular vector
-  return perpendicular.normalized();
-}
-
-/**
- * Check if two vectors are approximately parallel
- * @param {Vector} v1 - First vector
- * @param {Vector} v2 - Second vector
- * @param {number} tolerance - Tolerance for dot product comparison
- * @returns {boolean} True if vectors are parallel
- */
-export function areVectorsParallel(v1, v2, tolerance = 1e-10) {
-  const n1 = v1.normalized();
-  const n2 = v2.normalized();
+  const result = perpendicular.normalized();
   
-  const crossProduct = n1.cross(n2);
-  const crossLength = crossProduct.Length;
-  
-  const isParallel = crossLength < tolerance;
-  
-  return isParallel;
-}
-
-/**
- * Check if two vectors are approximately anti-parallel
- * @param {Vector} v1 - First vector
- * @param {Vector} v2 - Second vector
- * @param {number} tolerance - Tolerance for dot product comparison
- * @returns {boolean} True if vectors are anti-parallel
- */
-export function areVectorsAntiParallel(v1, v2, tolerance = 1e-10) {
-  const n1 = v1.normalized();
-  const n2 = v2.normalized();
-  
-  const dot = n1.dot(n2);
-  
-  const isAntiParallel = Math.abs(dot + 1) < tolerance;
-  
-  return isAntiParallel;
-}
-
-/**
- * Calculate the distance from a point to a plane
- * @param {Vector} point - Point to check
- * @param {Vector} planePoint - Point on the plane
- * @param {Vector} planeNormal - Normal vector of the plane
- * @returns {number} Signed distance to the plane
- */
-export function distanceToPlane(point, planePoint, planeNormal) {
-  const normal = planeNormal.normalized();
-  
-  const vectorToPoint = point.sub(planePoint);
-  
-  const distance = vectorToPoint.dot(normal);
-  
-  return distance;
+  return result;
 }
