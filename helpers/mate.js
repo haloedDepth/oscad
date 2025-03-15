@@ -1,65 +1,10 @@
 // helpers/mate.js
-import { Vector } from "replicad";
+import { Transformation, Vector, cast } from "replicad";
 import { getFaceNormal, getFaceCenter, findMatchingFaces } from "./boundingBox.js";
-import { 
-  findPerpendicularVector, 
-  areVectorsAntiParallel,
-  distanceToPlane
-} from "./math.js";
+import { findPerpendicularVector } from "./math.js";
 
 /**
- * Calculate the transformation needed to align two bounding box faces
- * by making their normals anti-parallel and then translating
- * so the face centers coincide (flush).
- *
- * NOTE: This corrected version omits the extra distance-to-plane
- * "push," because once we rotate around the face center itself,
- * we do NOT need an additional offset for flush alignment.
- */
-export function calculateMateTransformation(model1, face1, model2, face2) {
-  const box1 = model1.boundingBox;
-  const box2 = model2.boundingBox;
-  
-  // Get face normals
-  const normal1 = getFaceNormal(face1);
-  const normal2 = getFaceNormal(face2);
-
-  // Decide if we must rotate so that normal2 is anti-parallel to normal1
-  let rotationAxis = new Vector([0, 0, 0]);
-  let rotationAngle = 0;
-
-  const isAntiParallel = areVectorsAntiParallel(normal1, normal2);
-  if (!isAntiParallel) {
-    // We want: normal2 --> -normal1
-    const targetNormal = normal1.multiply(-1);
-    rotationAngle = normal2.getAngle(targetNormal);
-
-    if (Math.abs(rotationAngle) < 1e-10) {
-      rotationAxis = new Vector([0, 0, 0]);
-      rotationAngle = 0;
-    } else if (Math.abs(Math.abs(rotationAngle) - 180) < 1e-10) {
-      // For 180-degree rotations, pick any perpendicular axis
-      rotationAxis = findPerpendicularVector(normal2);
-    } else {
-      rotationAxis = normal2.cross(targetNormal);
-    }
-    targetNormal.delete();
-  }
-
-  // Face-center alignment (flush)
-  const center1 = getFaceCenter(box1, face1);
-  const center2 = getFaceCenter(box2, face2);
-  const translationVector = center1.sub(center2);
-
-  return {
-    rotationAxis,
-    rotationAngle,
-    translationVector
-  };
-}
-
-/**
- * Apply a mate constraint between two models
+ * Apply a mate constraint between two models using direct transformation
  * @param {Object} fixedModel - Model that stays fixed
  * @param {string} fixedFace - Face identifier for fixed model
  * @param {Object} movingModel - Model to be moved
@@ -67,30 +12,49 @@ export function calculateMateTransformation(model1, face1, model2, face2) {
  * @returns {Object} Transformed moving model
  */
 export function mateBoundingBoxFaces(fixedModel, fixedFace, movingModel, movingFace) {
-  const { rotationAxis, rotationAngle, translationVector } = 
-    calculateMateTransformation(fixedModel, fixedFace, movingModel, movingFace);
+  const box1 = fixedModel.boundingBox;
+  const box2 = movingModel.boundingBox;
   
-  let transformedModel = movingModel;
+  // Get face normals and centers
+  const normal1 = getFaceNormal(fixedFace);
+  const normal2 = getFaceNormal(movingFace);
+  const center1 = getFaceCenter(box1, fixedFace);
+  const center2 = getFaceCenter(box2, movingFace);
   
-  if (rotationAngle !== 0 && rotationAxis.Length > 1e-10) {
-    // Get moving face's center before transformations
-    const movingFaceCenter = getFaceCenter(movingModel.boundingBox, movingFace);
-    
-    transformedModel = transformedModel.rotate(
-      rotationAngle,
-      [movingFaceCenter.x, movingFaceCenter.y, movingFaceCenter.z],
-      [rotationAxis.x, rotationAxis.y, rotationAxis.z]
-    );
-  }
+  // Create perpendicular vectors for xDir
+  const xDir1 = findPerpendicularVector(normal1);
+  const xDir2 = findPerpendicularVector(normal2);
   
-  transformedModel = transformedModel.translate([
-    translationVector.x,
-    translationVector.y,
-    translationVector.z
-  ]);
+  // Create a transformation
+  const transformation = new Transformation();
+  transformation.coordSystemChange(
+    {
+      origin: center2.toTuple(),
+      zDir: normal2.toTuple(),
+      xDir: xDir2.toTuple()
+    },
+    {
+      origin: center1.toTuple(),
+      zDir: [-normal1.x, -normal1.y, -normal1.z],
+      xDir: xDir1.toTuple()
+    }
+  );
   
-  return transformedModel;
+  // This is the correct way to transform a shape
+  const transformed = cast(transformation.transform(movingModel.wrapped));
+  
+  // Clean up
+  transformation.delete();
+  xDir1.delete();
+  xDir2.delete();
+  normal1.delete();
+  normal2.delete();
+  center1.delete();
+  center2.delete();
+  
+  return transformed;
 }
+
 
 /**
  * Automatically find and mate the best matching faces between two models
@@ -117,18 +81,18 @@ export function autoMateBoundingBoxes(fixedModel, movingModel, preferLarger = tr
  * @returns {Object} Offset model
  */
 export function offsetMatedModel(model, face, distance, fixedFace) {
-  // Use the fixed model's face normal for consistent behavior
   const fixedNormal = getFaceNormal(fixedFace);
   
-  // Offset in the direction of the fixed normal for positive distances
-  // This ensures consistent behavior regardless of which faces are mated
-  const offsetVector = fixedNormal.multiply(distance);
-  
-  const offsetModel = model.translate([
-    offsetVector.x,
-    offsetVector.y,
-    offsetVector.z
+  // No need for transformation object for simple translation
+  // Use the shape's built-in translation method instead
+  const transformedModel = model.translate([
+    fixedNormal.x * distance,
+    fixedNormal.y * distance,
+    fixedNormal.z * distance
   ]);
   
-  return offsetModel;
+  // Clean up
+  fixedNormal.delete();
+  
+  return transformedModel;
 }

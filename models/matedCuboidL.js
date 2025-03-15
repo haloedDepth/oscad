@@ -28,8 +28,8 @@ export function createMatedCuboidL(
   lFlange1Width = 50,
   lFlange2Width = 50,
   lThickness = 5,
-  cuboidFaceName = "BOTTOM",
-  lProfileFaceName = "RIGHT",
+  cuboidFaceName = "LEFT",
+  lProfileFaceName = "TOP",
   offsetDistance = 0
 ) {
   // Create the cuboid (fixed model)
@@ -69,3 +69,4 @@ export function createMatedCuboidL(
   
   return combinedModel;
 }
+
