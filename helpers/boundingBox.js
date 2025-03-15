@@ -83,123 +83,6 @@ export function getFaceCenter(boundingBox, face) {
 }
 
 /**
- * Get the vertices of a specific face of a bounding box
- * @param {BoundingBox} boundingBox - The bounding box
- * @param {string} face - Face identifier (one of FACES constants)
- * @returns {Array<Vector>} Array of 4 vertices defining the face, in counter-clockwise order
- */
-export function getFaceVertices(boundingBox, face) {
-  const [[xmin, ymin, zmin], [xmax, ymax, zmax]] = boundingBox.bounds;
-  
-  let vertices;
-  switch (face) {
-    case FACES.FRONT:
-      vertices = [
-        new Vector([xmin, ymin, zmin]),
-        new Vector([xmax, ymin, zmin]),
-        new Vector([xmax, ymin, zmax]),
-        new Vector([xmin, ymin, zmax]),
-      ];
-      break;
-    case FACES.BACK:
-      vertices = [
-        new Vector([xmin, ymax, zmin]),
-        new Vector([xmin, ymax, zmax]),
-        new Vector([xmax, ymax, zmax]),
-        new Vector([xmax, ymax, zmin]),
-      ];
-      break;
-    case FACES.LEFT:
-      vertices = [
-        new Vector([xmin, ymin, zmin]),
-        new Vector([xmin, ymin, zmax]),
-        new Vector([xmin, ymax, zmax]),
-        new Vector([xmin, ymax, zmin]),
-      ];
-      break;
-    case FACES.RIGHT:
-      vertices = [
-        new Vector([xmax, ymin, zmin]),
-        new Vector([xmax, ymax, zmin]),
-        new Vector([xmax, ymax, zmax]),
-        new Vector([xmax, ymin, zmax]),
-      ];
-      break;
-    case FACES.TOP:
-      vertices = [
-        new Vector([xmin, ymin, zmax]),
-        new Vector([xmax, ymin, zmax]),
-        new Vector([xmax, ymax, zmax]),
-        new Vector([xmin, ymax, zmax]),
-      ];
-      break;
-    case FACES.BOTTOM:
-      vertices = [
-        new Vector([xmin, ymin, zmin]),
-        new Vector([xmin, ymax, zmin]),
-        new Vector([xmax, ymax, zmin]),
-        new Vector([xmax, ymin, zmin]),
-      ];
-      break;
-    default: 
-      throw new Error(`Unknown face identifier: ${face}`);
-  }
-  
-  return vertices;
-}
-
-/**
- * Get all faces of a bounding box
- * @param {BoundingBox} boundingBox - The bounding box
- * @returns {Object} Object mapping face identifiers to arrays of vertices
- */
-export function getAllFaces(boundingBox) {
-  const faces = {
-    [FACES.FRONT]: getFaceVertices(boundingBox, FACES.FRONT),
-    [FACES.BACK]: getFaceVertices(boundingBox, FACES.BACK),
-    [FACES.LEFT]: getFaceVertices(boundingBox, FACES.LEFT),
-    [FACES.RIGHT]: getFaceVertices(boundingBox, FACES.RIGHT),
-    [FACES.TOP]: getFaceVertices(boundingBox, FACES.TOP),
-    [FACES.BOTTOM]: getFaceVertices(boundingBox, FACES.BOTTOM),
-  };
-  
-  return faces;
-}
-
-/**
- * Calculate the area of a bounding box face
- * @param {BoundingBox} boundingBox - The bounding box
- * @param {string} face - Face identifier (one of FACES constants)
- * @returns {number} Area of the face
- */
-export function getFaceArea(boundingBox, face) {
-  const [[xmin, ymin, zmin], [xmax, ymax, zmax]] = boundingBox.bounds;
-  const width = xmax - xmin;
-  const height = ymax - ymin;
-  const depth = zmax - zmin;
-  
-  let area;
-  switch (face) {
-    case FACES.FRONT:
-    case FACES.BACK:
-      area = width * depth;
-      break;
-    case FACES.LEFT:
-    case FACES.RIGHT:
-      area = height * depth;
-      break;
-    case FACES.TOP:
-    case FACES.BOTTOM:
-      area = width * height;
-      break;
-    default: 
-      throw new Error(`Unknown face identifier: ${face}`);
-  }
-  
-  return area;
-}
-
-/**
  * Find the best matching face between two bounding boxes
  * @param {BoundingBox} box1 - First bounding box
  * @param {BoundingBox} box2 - Second bounding box
@@ -208,61 +91,32 @@ export function getFaceArea(boundingBox, face) {
  */
 export function findMatchingFaces(box1, box2, preferLarger = true) {
   const faces = Object.values(FACES);
-  const faceAreas1 = faces.map(face => {
-    const area = getFaceArea(box1, face);
-    return { face, area };
-  });
-  
-  const faceAreas2 = faces.map(face => {
-    const area = getFaceArea(box2, face);
-    return { face, area };
-  });
-  
-  if (preferLarger) {
-    // Sort by area, largest first
-    faceAreas1.sort((a, b) => b.area - a.area);
-    faceAreas2.sort((a, b) => b.area - a.area);
-  }
   
   // Find the best matching pair (with opposite normals)
-  for (const { face: face1 } of faceAreas1) {
+  for (const face1 of faces) {
     const normal1 = getFaceNormal(face1);
     
-    for (const { face: face2 } of faceAreas2) {
+    for (const face2 of faces) {
       const normal2 = getFaceNormal(face2);
       
       // Check if normals are approximately in opposite directions
-      const antiParallel = areVectorsAntiParallel(normal1, normal2);
+      const areAntiParallel = Math.abs(normal1.dot(normal2) + 1) < 1e-10;
       
-      if (antiParallel) {
+      if (areAntiParallel) {
+        normal1.delete();
+        normal2.delete();
         return { face1, face2 };
       }
+      
+      normal2.delete();
     }
+    
+    normal1.delete();
   }
   
   // If no matching pair found, default to largest faces
-  const result = {
-    face1: faceAreas1[0].face,
-    face2: faceAreas2[0].face
+  return {
+    face1: FACES.FRONT,
+    face2: FACES.FRONT
   };
-  
-  return result;
-}
-
-/**
- * Check if two vectors are approximately anti-parallel
- * @param {Vector} v1 - First vector
- * @param {Vector} v2 - Second vector
- * @param {number} tolerance - Tolerance angle in degrees
- * @returns {boolean} True if vectors are anti-parallel
- */
-function areVectorsAntiParallel(v1, v2, tolerance = 1e-10) {
-  const n1 = v1.normalized();
-  const n2 = v2.normalized();
-  
-  const dot = n1.dot(n2);
-  
-  const isAntiParallel = Math.abs(dot + 1) < tolerance;
-  
-  return isAntiParallel;
 }

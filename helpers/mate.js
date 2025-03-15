@@ -2,12 +2,9 @@
 import { Vector } from "replicad";
 import { getFaceNormal, getFaceCenter, findMatchingFaces } from "./boundingBox.js";
 import { 
-  angleBetweenVectors, 
-  calculateRotationAxis, 
+  findPerpendicularVector, 
   areVectorsAntiParallel,
-  areVectorsParallel,
-  distanceToPlane,
-  findPerpendicularVector
+  distanceToPlane
 } from "./math.js";
 
 /**
@@ -36,7 +33,7 @@ export function calculateMateTransformation(model1, face1, model2, face2) {
     // We need to rotate so normal2 is anti-parallel to normal1
     const targetNormal = normal1.multiply(-1);
     
-    rotationAngle = angleBetweenVectors(normal2, targetNormal);
+    rotationAngle = normal2.getAngle(targetNormal);
     
     if (Math.abs(rotationAngle) < 1e-10) {
       rotationAxis = new Vector([0, 0, 0]);
@@ -45,7 +42,7 @@ export function calculateMateTransformation(model1, face1, model2, face2) {
       // For 180-degree rotations, we need a perpendicular axis
       rotationAxis = findPerpendicularVector(normal2);
     } else {
-      rotationAxis = calculateRotationAxis(normal2, targetNormal);
+      rotationAxis = normal2.cross(targetNormal);
     }
   }
   
@@ -68,7 +65,7 @@ export function calculateMateTransformation(model1, face1, model2, face2) {
   return {
     rotationAxis,
     rotationAngle,
-    translationVector
+    translationVector: finalTranslationVector
   };
 }
 
@@ -145,41 +142,4 @@ export function offsetMatedModel(model, face, distance, fixedFace) {
   ]);
   
   return offsetModel;
-}
-
-/**
- * Check if two models' faces are already mated
- * @param {Object} model1 - First model
- * @param {string} face1 - Face identifier for first model
- * @param {Object} model2 - Second model
- * @param {string} face2 - Face identifier for second model
- * @param {number} tolerance - Distance tolerance
- * @returns {boolean} True if faces are mated
- */
-export function areFacesMated(model1, face1, model2, face2, tolerance = 1e-9) {
-  const box1 = model1.boundingBox;
-  const box2 = model2.boundingBox;
-  
-  // Get face normals
-  const normal1 = getFaceNormal(face1);
-  const normal2 = getFaceNormal(face2);
-  
-  // Check if normals are anti-parallel
-  const isAntiParallel = areVectorsAntiParallel(normal1, normal2);
-  
-  if (!isAntiParallel) {
-    return false;
-  }
-  
-  // Get face centers
-  const center1 = getFaceCenter(box1, face1);
-  const center2 = getFaceCenter(box2, face2);
-  
-  // Check distance between faces
-  const distance = distanceToPlane(center2, center1, normal1);
-  
-  // Check if faces are aligned
-  const aligned = Math.abs(distance) < tolerance;
-  
-  return aligned;
 }
