@@ -9,11 +9,12 @@ import {
 
 /**
  * Calculate the transformation needed to align two bounding box faces
- * @param {Object} model1 - Source model
- * @param {string} face1 - Source face identifier
- * @param {Object} model2 - Target model
- * @param {string} face2 - Target face identifier
- * @returns {Object} Transformation parameters { rotationAxis, rotationAngle, translationVector }
+ * by making their normals anti-parallel and then translating
+ * so the face centers coincide (flush).
+ *
+ * NOTE: This corrected version omits the extra distance-to-plane
+ * "push," because once we rotate around the face center itself,
+ * we do NOT need an additional offset for flush alignment.
  */
 export function calculateMateTransformation(model1, face1, model2, face2) {
   const box1 = model1.boundingBox;
@@ -22,50 +23,38 @@ export function calculateMateTransformation(model1, face1, model2, face2) {
   // Get face normals
   const normal1 = getFaceNormal(face1);
   const normal2 = getFaceNormal(face2);
-  
-  // Calculate rotation to align normals in opposite directions
+
+  // Decide if we must rotate so that normal2 is anti-parallel to normal1
   let rotationAxis = new Vector([0, 0, 0]);
   let rotationAngle = 0;
-  
+
   const isAntiParallel = areVectorsAntiParallel(normal1, normal2);
-  
   if (!isAntiParallel) {
-    // We need to rotate so normal2 is anti-parallel to normal1
+    // We want: normal2 --> -normal1
     const targetNormal = normal1.multiply(-1);
-    
     rotationAngle = normal2.getAngle(targetNormal);
-    
+
     if (Math.abs(rotationAngle) < 1e-10) {
       rotationAxis = new Vector([0, 0, 0]);
       rotationAngle = 0;
     } else if (Math.abs(Math.abs(rotationAngle) - 180) < 1e-10) {
-      // For 180-degree rotations, we need a perpendicular axis
+      // For 180-degree rotations, pick any perpendicular axis
       rotationAxis = findPerpendicularVector(normal2);
     } else {
       rotationAxis = normal2.cross(targetNormal);
     }
+    targetNormal.delete();
   }
-  
-  // Calculate translation to align face centers
+
+  // Face-center alignment (flush)
   const center1 = getFaceCenter(box1, face1);
   const center2 = getFaceCenter(box2, face2);
-  
-  // Calculate the translation vector to align centers
   const translationVector = center1.sub(center2);
-  
-  // Calculate the distance between faces to make them flush
-  const distanceToMove = distanceToPlane(center2, center1, normal1);
-  
-  // Critical fix: Reverse the sign of distanceToMove for proper face alignment
-  // This is the key fix that resolves the issue of objects being buried
-  const adjustmentVector = normal1.multiply(-distanceToMove);
-  
-  const finalTranslationVector = translationVector.add(adjustmentVector);
-  
+
   return {
     rotationAxis,
     rotationAngle,
-    translationVector: finalTranslationVector
+    translationVector
   };
 }
 
