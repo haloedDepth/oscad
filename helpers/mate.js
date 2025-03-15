@@ -1,6 +1,6 @@
 // helpers/mate.js
 import { Plane, Transformation } from "replicad";
-import { getFaceNormal, getFaceCenter, findMatchingFaces } from "./boundingBox.js";
+import { getFaceNormal, getFaceCenter } from "./boundingBox.js";
 import { findPerpendicularVector } from "./math.js";
 import { cast } from "replicad";
 
