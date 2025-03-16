@@ -56,21 +56,6 @@ export function mateBoundingBoxFaces(fixedModel, fixedFace, movingModel, movingF
 }
 
 
-/**
- * Automatically find and mate the best matching faces between two models
- * @param {Object} fixedModel - Model that stays fixed
- * @param {Object} movingModel - Model to be moved
- * @param {boolean} preferLarger - Prefer larger faces if true
- * @returns {Object} Transformed moving model
- */
-export function autoMateBoundingBoxes(fixedModel, movingModel, preferLarger = true) {
-  const box1 = fixedModel.boundingBox;
-  const box2 = movingModel.boundingBox;
-  
-  const { face1, face2 } = findMatchingFaces(box1, box2, preferLarger);
-  
-  return mateBoundingBoxFaces(fixedModel, face1, movingModel, face2);
-}
 
 /**
  * Offset a mated model by a specified distance along the normal
