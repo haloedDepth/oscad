@@ -34,7 +34,7 @@ export const modelSchemas = {
   ],
   "LProfile": [
     // Validate all parameters are positive numbers
-    validateAll(isPositive, 'length', 'flange1Width', 'flange2Width', 'thickness'),
+    validateAll(isPositive, 'depth', 'flangeXLenght', 'flangeYLenght', 'thickness'),
     // Validate thickness is less than flange dimensions
     (params) => lessThan(params, 'thickness', params.flange1Width),
     (params) => lessThan(params, 'thickness', params.flange2Width)

@@ -1,4 +1,3 @@
-// models/drill.js
 import { makeCylinder } from "replicad";
 import { createFrustum } from './frustum.js';
 
@@ -24,8 +23,8 @@ export function createDrill(
     makeCylinder(
       topRadius, 
       cylinderHeight, 
-      [0, 0, frustumHeight], // Place cylinder at the top of the frustum
-      [0, 0, 1] // Z axis direction
+      [0, 0, -frustumHeight], // Place cylinder at the bottom of the frustum
+      [0, 0, -1] // Negative Z axis direction
     )
   );
 }

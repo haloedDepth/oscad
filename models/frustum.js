@@ -1,4 +1,3 @@
-// models/frustum.js
 import { sketchCircle } from "replicad";
 
 /**
@@ -19,7 +18,7 @@ export function createFrustum(
   }).loftWith(
     sketchCircle(topRadius, {
       plane: "XY",
-      origin: [0, 0, height]
+      origin: [0, 0, -height]  // Changed to negative height
     }),
     { ruled: true }
   );
