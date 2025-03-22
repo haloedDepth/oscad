@@ -29,15 +29,11 @@ export function mateBoundingBoxFaces(fixedModel, fixedFace, movingModel, movingF
   const transformation = new Transformation();
   transformation.coordSystemChange(
     {
-      origin: center2.toTuple(),
-      zDir: normal2.toTuple(),
-      xDir: xDir2.toTuple()
-    },
-    {
       origin: center1.toTuple(),
-      zDir: [-normal1.x, -normal1.y, -normal1.z],
+      zDir: normal1.toTuple(),
       xDir: xDir1.toTuple()
-    }
+    },
+    "reference"
   );
   
   // This is the correct way to transform a shape

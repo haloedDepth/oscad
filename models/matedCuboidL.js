@@ -28,7 +28,7 @@ export function createMatedCuboidL(
   lFlange1Width = 50,
   lFlange2Width = 50,
   lThickness = 5,
-  cuboidFaceName = "LEFT",
+  cuboidFaceName = "BOTTOM",
   lProfileFaceName = "TOP",
   offsetDistance = 0
 ) {
