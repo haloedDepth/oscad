@@ -311,3 +311,126 @@ export function getEdgeFromFaces(face1, face2) {
   
   throw new Error(`No edge connects faces ${face1} and ${face2}`);
 }
+
+/**
+ * Get arbitrary point on a bounding box face using normalized coordinates
+ * @param {BoundingBox} boundingBox - The bounding box
+ * @param {string} face - Face identifier (one of FACES constants)
+ * @param {number} u - Normalized coordinate along first axis (0.0 to 1.0)
+ * @param {number} v - Normalized coordinate along second axis (0.0 to 1.0)
+ * @returns {Vector} Point on the face
+ */
+export function getPointOnFace(boundingBox, face, u = 0.5, v = 0.5) {
+  const [[xmin, ymin, zmin], [xmax, ymax, zmax]] = boundingBox.bounds;
+  
+  // Clamp parameters to valid range
+  const uParam = Math.max(0, Math.min(1, u));
+  const vParam = Math.max(0, Math.min(1, v));
+  
+  let point;
+  switch (face) {
+    case FACES.FRONT: 
+      point = new Vector([
+        xmin + (xmax - xmin) * uParam, 
+        ymin, 
+        zmin + (zmax - zmin) * vParam
+      ]); 
+      break;
+    case FACES.BACK: 
+      point = new Vector([
+        xmin + (xmax - xmin) * uParam, 
+        ymax, 
+        zmin + (zmax - zmin) * vParam
+      ]); 
+      break;
+    case FACES.LEFT: 
+      point = new Vector([
+        xmin, 
+        ymin + (ymax - ymin) * uParam, 
+        zmin + (zmax - zmin) * vParam
+      ]); 
+      break;
+    case FACES.RIGHT: 
+      point = new Vector([
+        xmax, 
+        ymin + (ymax - ymin) * uParam, 
+        zmin + (zmax - zmin) * vParam
+      ]); 
+      break;
+    case FACES.TOP: 
+      point = new Vector([
+        xmin + (xmax - xmin) * uParam, 
+        ymin + (ymax - ymin) * vParam, 
+        zmax
+      ]); 
+      break;
+    case FACES.BOTTOM: 
+      point = new Vector([
+        xmin + (xmax - xmin) * uParam, 
+        ymin + (ymax - ymin) * vParam, 
+        zmin
+      ]); 
+      break;
+    default: 
+      throw new Error(`Unknown face identifier: ${face}`);
+  }
+  
+  return point;
+}
+
+/**
+ * Get arbitrary point along a bounding box edge
+ * @param {BoundingBox} boundingBox - The bounding box
+ * @param {string} edge - Edge identifier (one of EDGES constants)
+ * @param {number} t - Parameter along edge (0.0 to 1.0)
+ * @returns {Vector} Point on the edge
+ */
+export function getPointOnEdge(boundingBox, edge, t = 0.5) {
+  // Clamp parameter to valid range
+  const tParam = Math.max(0, Math.min(1, t));
+  
+  const startPoint = getEdgeStartPoint(boundingBox, edge);
+  const endPoint = getEdgeEndPoint(boundingBox, edge);
+  
+  // Linear interpolation between start and end points
+  return new Vector([
+    startPoint.x + (endPoint.x - startPoint.x) * tParam,
+    startPoint.y + (endPoint.y - startPoint.y) * tParam,
+    startPoint.z + (endPoint.z - startPoint.z) * tParam
+  ]);
+}
+
+/**
+ * Get arbitrary point on a bounding box by specifying a generic position
+ * @param {BoundingBox} boundingBox - The bounding box
+ * @param {Object} position - Position specification object
+ * @param {string} position.type - Type of position ('face', 'edge', 'corner', or 'center')
+ * @param {string} position.element - Element identifier (face or edge name)
+ * @param {Object} position.params - Parameters for position (u,v for face, t for edge)
+ * @returns {Vector} Point on the bounding box
+ */
+export function getPointOnBoundingBox(boundingBox, position) {
+  const { type, element, params = {} } = position;
+  
+  switch (type) {
+    case 'face':
+      return getPointOnFace(boundingBox, element, params.u, params.v);
+    case 'edge':
+      return getPointOnEdge(boundingBox, element, params.t);
+    case 'corner':
+      // Corners are just the start or end points of edges
+      if (element.includes('START')) {
+        const edgeName = element.replace('_START', '');
+        return getEdgeStartPoint(boundingBox, edgeName);
+      } else if (element.includes('END')) {
+        const edgeName = element.replace('_END', '');
+        return getEdgeEndPoint(boundingBox, edgeName);
+      } else {
+        throw new Error(`Invalid corner identifier: ${element}`);
+      }
+    case 'center':
+      return new Vector(boundingBox.center);
+    default:
+      throw new Error(`Unknown position type: ${type}`);
+  }
+}
