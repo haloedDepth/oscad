@@ -1,79 +1,129 @@
-// helpers/mate.js
+// In helpers/mate.js or a new file like helpers/constraint.js
+
 import { Transformation, Vector, cast } from "replicad";
-import { getFaceNormal, getFaceCenter } from "./boundingBox.js";
+import { getFaceNormal, getEdgeConnectingFaces, getPointOnBoundingBox } from "./boundingBox.js";
 import { findPerpendicularVector } from "./math.js";
 
 /**
- * Apply a mate constraint between two models using direct transformation
+ * Constrain models by specifying points with optional direction control
  * @param {Object} fixedModel - Model that stays fixed
- * @param {string} fixedFace - Face identifier for fixed model
+ * @param {Object} fixedPointSpec - Point specification on fixed model
  * @param {Object} movingModel - Model to be moved
- * @param {string} movingFace - Face identifier for moving model
+ * @param {Object} movingPointSpec - Point specification on moving model
+ * @param {Object} options - Additional options for constraint
+ * @param {Array} [options.normal] - Override normal direction
+ * @param {Array} [options.xDir] - Override orientation direction
+ * @param {string} [options.faceForEdge] - Face to use for normal if point is on edge
+ * @param {string} [options.faceForCorner] - Face to use for normal if point is corner
  * @returns {Object} Transformed moving model
  */
-export function mateBoundingBoxFaces(fixedModel, fixedFace, movingModel, movingFace) {
-  const box1 = fixedModel.boundingBox;
-  const box2 = movingModel.boundingBox;
+export function constraintModelsByPoints(
+  fixedModel, 
+  fixedPointSpec, 
+  movingModel, 
+  movingPointSpec, 
+  options = {}
+) {
+  // Get points from specifications
+  const fixedPoint = getPointOnBoundingBox(fixedModel.boundingBox, fixedPointSpec);
+  const movingPoint = getPointOnBoundingBox(movingModel.boundingBox, movingPointSpec);
   
-  // Get face normals and centers
-  const normal1 = getFaceNormal(fixedFace);
-  const normal2 = getFaceNormal(movingFace);
-  const center1 = getFaceCenter(box1, fixedFace);
-  const center2 = getFaceCenter(box2, movingFace);
+  // Get normal direction (zDir)
+  let normal;
+  if (options.normal) {
+    normal = new Vector(options.normal);
+  } else {
+    normal = getNormalForPointSpec(fixedModel, fixedPointSpec, options);
+  }
   
-  // Create perpendicular vectors for xDir
-  const xDir1 = findPerpendicularVector(normal1);
-  const xDir2 = findPerpendicularVector(normal2);
+  // Get orientation direction (xDir)
+  let xDir;
+  if (options.xDir) {
+    xDir = new Vector(options.xDir);
+  } else {
+    xDir = findPerpendicularVector(normal);
+  }
   
-  // Create a transformation
+  // Create transformation
   const transformation = new Transformation();
+  
+  // Use "reference" approach like in mateBoundingBoxFaces
   transformation.coordSystemChange(
     {
-      origin: center1.toTuple(),
-      zDir: normal1.toTuple(),
-      xDir: xDir1.toTuple()
+      origin: fixedPoint.toTuple(),
+      zDir: normal.toTuple(),
+      xDir: xDir.toTuple()
     },
     "reference"
   );
   
-  // This is the correct way to transform a shape
+  // Apply transformation
   const transformed = cast(transformation.transform(movingModel.wrapped));
   
   // Clean up
   transformation.delete();
-  xDir1.delete();
-  xDir2.delete();
-  normal1.delete();
-  normal2.delete();
-  center1.delete();
-  center2.delete();
+  normal.delete();
+  xDir.delete();
+  fixedPoint.delete();
+  movingPoint.delete();
   
   return transformed;
 }
 
-
+/**
+ * Get normal vector for a point specification
+ * @param {Object} model - The model
+ * @param {Object} pointSpec - Point specification
+ * @param {Object} options - Additional options
+ * @returns {Vector} Normal vector
+ */
+function getNormalForPointSpec(model, pointSpec, options = {}) {
+  const { type, element } = pointSpec;
+  
+  switch (type) {
+    case 'face':
+      return getFaceNormal(element);
+    case 'edge':
+      // For edges, use specified face if provided
+      if (options.faceForEdge) {
+        return getFaceNormal(options.faceForEdge);
+      } else {
+        // Use one of the faces connected to this edge
+        const faces = getEdgeConnectingFaces(element);
+        return getFaceNormal(faces[0]);
+      }
+    case 'corner':
+      // For corners, use specified face if provided
+      if (options.faceForCorner) {
+        return getFaceNormal(options.faceForCorner);
+      } else {
+        // Default to Z-axis
+        return new Vector([0, 0, 1]);
+      }
+    case 'center':
+    default:
+      // Default to Z-axis for center or unknown types
+      return new Vector([0, 0, 1]);
+  }
+}
 
 /**
- * Offset a mated model by a specified distance along the normal
- * @param {Object} model - The mated model
- * @param {string} face - The face that was mated
+ * Offset a constrained model along a direction
+ * @param {Object} model - The constrained model
+ * @param {Array} direction - Direction to offset along
  * @param {number} distance - Distance to offset
- * @param {string} fixedFace - The face of the fixed model that was used for mating
  * @returns {Object} Offset model
  */
-export function offsetMatedModel(model, face, distance, fixedFace) {
-  const fixedNormal = getFaceNormal(fixedFace);
+export function offsetConstrainedModel(model, direction, distance) {
+  const directionVec = new Vector(direction);
   
-  // No need for transformation object for simple translation
-  // Use the shape's built-in translation method instead
+  // Simple translation along the direction
   const transformedModel = model.translate([
-    fixedNormal.x * distance,
-    fixedNormal.y * distance,
-    fixedNormal.z * distance
+    directionVec.x * distance,
+    directionVec.y * distance,
+    directionVec.z * distance
   ]);
   
-  // Clean up
-  fixedNormal.delete();
-  
+  directionVec.delete();
   return transformedModel;
 }
