@@ -1,15 +1,14 @@
-// In helpers/mate.js or a new file like helpers/constraint.js
+// In helpers/mate.js
 
 import { Transformation, Vector, cast } from "replicad";
 import { getFaceNormal, getEdgeConnectingFaces, getPointOnBoundingBox } from "./boundingBox.js";
 import { findPerpendicularVector } from "./math.js";
 
 /**
- * Constrain models by specifying points with optional direction control
+ * Constrain models by specifying a reference point with orientation
  * @param {Object} fixedModel - Model that stays fixed
  * @param {Object} fixedPointSpec - Point specification on fixed model
  * @param {Object} movingModel - Model to be moved
- * @param {Object} movingPointSpec - Point specification on moving model
  * @param {Object} options - Additional options for constraint
  * @param {Array} [options.normal] - Override normal direction
  * @param {Array} [options.xDir] - Override orientation direction
@@ -21,12 +20,10 @@ export function constraintModelsByPoints(
   fixedModel, 
   fixedPointSpec, 
   movingModel, 
-  movingPointSpec, 
   options = {}
 ) {
-  // Get points from specifications
+  // Get reference point from specification
   const fixedPoint = getPointOnBoundingBox(fixedModel.boundingBox, fixedPointSpec);
-  const movingPoint = getPointOnBoundingBox(movingModel.boundingBox, movingPointSpec);
   
   // Get normal direction (zDir)
   let normal;
@@ -47,7 +44,7 @@ export function constraintModelsByPoints(
   // Create transformation
   const transformation = new Transformation();
   
-  // Use "reference" approach like in mateBoundingBoxFaces
+  // Set up coordinate system at the reference point
   transformation.coordSystemChange(
     {
       origin: fixedPoint.toTuple(),
@@ -65,7 +62,6 @@ export function constraintModelsByPoints(
   normal.delete();
   xDir.delete();
   fixedPoint.delete();
-  movingPoint.delete();
   
   return transformed;
 }
