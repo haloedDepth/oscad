@@ -4,7 +4,7 @@ import { modelWithHelpers } from '../helperUtils.js';
 import { constraintModelsByPoints } from '../helpers/mate.js';
 import { getPointOnFace, FACES } from '../helpers/boundingBox.js';
 import { createDrill } from './drill.js';
-import { cast } from 'replicad';
+import { mirror } from '../helpers/shapes.js';
 
 /**
  * Creates a model with a helper cuboid space and drill holes in all four corners
@@ -44,17 +44,12 @@ export function createHelperCuboid(
   // Position first drill
   const drill1 = constraintModelsByPoints(mainModel, pointSpec, drill);
   
-  // Create a proper copy before mirroring to front-right
-  // cast() should create a proper OpenCascade copy of the shape
-  const drill1Copy = cast(drill1.wrapped);
-  const drill2 = drill1Copy.mirror("XZ", mainModel.boundingBox.center);
+  // Mirror to front-right, keeping the original drill1 intact
+  const drill2 = mirror(drill1, "XZ", mainModel.boundingBox.center, true);
   
-  // Mirror both to back
-  const drill1Copy2 = cast(drill1.wrapped);
-  const drill3 = drill1Copy2.mirror("YZ", mainModel.boundingBox.center);
-  
-  const drill2Copy = cast(drill2.wrapped);
-  const drill4 = drill2Copy.mirror("YZ", mainModel.boundingBox.center);
+  // Mirror both to back, keeping the originals intact
+  const drill3 = mirror(drill1, "YZ", mainModel.boundingBox.center, true);
+  const drill4 = mirror(drill2, "YZ", mainModel.boundingBox.center, true);
   
   // Cut all holes
   const drilledModel = mainModel.cut(drill1)
