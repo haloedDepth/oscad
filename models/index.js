@@ -9,6 +9,7 @@ import { createRectangularCuboidGrid } from './gridPattern.js';
 import { createLProfile } from './lProfile.js';
 import { createFrustum } from './frustum.js';
 import { createDrill } from './drill.js';
+import { createHelperCuboid } from './helperCuboid.js';
 
 
 // Import validation utilities
@@ -26,5 +27,6 @@ export const modelFunctions = {
   "RectangularCuboidGrid": withValidation(createRectangularCuboidGrid, modelSchemas["RectangularCuboidGrid"]),
   "LProfile": withValidation(createLProfile, modelSchemas["LProfile"]),
   "Frustum": withValidation(createFrustum, modelSchemas["Frustum"]),
+  "HelperCuboid": withValidation(createHelperCuboid, modelSchemas["HelperCuboid"]),
   "Drill": withValidation(createDrill, modelSchemas["Drill"])
 };

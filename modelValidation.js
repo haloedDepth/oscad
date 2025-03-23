@@ -46,5 +46,10 @@ export const modelSchemas = {
   "Drill": [
     // Validate all dimension parameters are positive numbers
     validateAll(isPositive, 'bottomRadius', 'topRadius', 'frustumHeight', 'cylinderHeight')
-  ]
+  ],
+  // Add this to modelValidation.js
+  "HelperCuboid": [
+    // Validate dimensions are positive
+  validateAll(isPositive, 'width', 'depth', 'height')
+]
 };
