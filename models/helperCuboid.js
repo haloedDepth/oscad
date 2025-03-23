@@ -6,10 +6,11 @@ import { getPointOnFace, FACES, EDGES, getEdgeMidpoint } from '../helpers/boundi
 import { createDrill } from './drill.js';
 import { mirror } from '../helpers/shapes.js';
 import { createLProfile } from './lProfile.js';
+import { createCylinder } from './cylinder.js';
 
 /**
  * Creates a model with a helper cuboid space and drill holes in all four corners
- * Plus two L-profiles on the bottom edges
+ * Plus two L-profiles on the bottom edges with holes in the bottom face
  * @param {number} width - Width of the helper cuboid
  * @param {number} depth - Depth of the helper cuboid
  * @param {number} height - Height of the helper cuboid
@@ -59,15 +60,43 @@ export function createHelperCuboid(
                               .cut(drill3)
                               .cut(drill4);
   
-  // Create only one L-profile with specified parameters
-  const lProfile1 = createLProfile(
-    20,      // depth
-    4.5,     // flangeXLength
-    4.5,     // flangeYLength
+  // Create L-profile with specified parameters
+  const lProfileRaw = createLProfile(
+    20,      // depth (along y-axis)
+    4.5,     // flangeXLength (along x-axis)
+    4.5,     // flangeYLength (along z-axis)
     0.5      // thickness
   );
   
-  // Position the first L-profile at the bottom left edge midpoint
+  // Create a simple cylinder for drilling
+  const holeDrill = createCylinder(0.800001, 0.5);
+  
+  // Position the first drill at 1.5 units from one edge and 2.25 from the other edge
+  // on the bottom face of the L-profile
+  const lProfileDrill1 = constraintModelsByPoints(
+    lProfileRaw,
+    {
+      type: 'face',
+      element: FACES.BOTTOM,
+      params: { 
+        u: 1.5 / 4.5,  // 1.5 units from edge on flange 
+        v: 2.25 / 20   // 2.25 units from edge on depth
+      }
+    },
+    holeDrill
+  );
+  
+  // First drill the L-profile with the first hole
+  const lProfileDrilledOnce = lProfileRaw.cut(lProfileDrill1);
+  
+  // Mirror the drill across the XZ plane (front-to-back)
+  // This keeps it on the bottom face but places it at the opposite end along the depth
+  const lProfileDrill2 = mirror(lProfileDrill1, "XZ", lProfileRaw.boundingBox.center, true);
+  
+  // Then drill with the mirrored hole
+  const lProfile1 = lProfileDrilledOnce.cut(lProfileDrill2);
+  
+  // Position the drilled L-profile at the bottom left edge midpoint
   const lProfile1Positioned = constraintModelsByPoints(
     mainModel,
     {
