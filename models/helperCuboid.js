@@ -59,18 +59,11 @@ export function createHelperCuboid(
                               .cut(drill3)
                               .cut(drill4);
   
-  // Create L-profiles with specified parameters
+  // Create only one L-profile with specified parameters
   const lProfile1 = createLProfile(
     20,      // depth
     4.5,     // flangeXLength
     4.5,     // flangeYLength
-    0.5      // thickness
-  );
-  
-  const lProfile2 = createLProfile(
-    20,      // depth
-    4.5,     // flangeYLength
-    4.5,     // flangeXLength
     0.5      // thickness
   );
   
@@ -89,20 +82,8 @@ export function createHelperCuboid(
     }
   );
   
-  // Position the second L-profile at the bottom right edge midpoint
-  const lProfile2Positioned = constraintModelsByPoints(
-    mainModel,
-    {
-      type: 'edge',
-      element: EDGES.RIGHT_BOTTOM,
-      params: { t: 0.5 } // Midpoint
-    },
-    lProfile2,
-    {
-      normal: [0, 0, -1],  // Bottom face normal
-      xDir: [-1, 0, 0]     // Negative Y direction
-    }
-  );
+  // Mirror the positioned L-profile to create the second L-profile
+  const lProfile2Positioned = mirror(lProfile1Positioned, "YZ", mainModel.boundingBox.center, true);
   
   // Fuse the L-profiles with the drilled model
   const finalModel = drilledModel.fuse(lProfile1Positioned).fuse(lProfile2Positioned);
