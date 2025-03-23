@@ -2,12 +2,14 @@
 import { createCuboid } from './cuboid.js';
 import { modelWithHelpers } from '../helperUtils.js';
 import { constraintModelsByPoints } from '../helpers/mate.js';
-import { getPointOnFace, FACES } from '../helpers/boundingBox.js';
+import { getPointOnFace, FACES, EDGES, getEdgeMidpoint } from '../helpers/boundingBox.js';
 import { createDrill } from './drill.js';
 import { mirror } from '../helpers/shapes.js';
+import { createLProfile } from './lProfile.js';
 
 /**
  * Creates a model with a helper cuboid space and drill holes in all four corners
+ * Plus two L-profiles on the bottom edges
  * @param {number} width - Width of the helper cuboid
  * @param {number} depth - Depth of the helper cuboid
  * @param {number} height - Height of the helper cuboid
@@ -57,6 +59,54 @@ export function createHelperCuboid(
                               .cut(drill3)
                               .cut(drill4);
   
+  // Create L-profiles with specified parameters
+  const lProfile1 = createLProfile(
+    20,      // depth
+    4.5,     // flangeXLength
+    4.5,     // flangeYLength
+    0.5      // thickness
+  );
+  
+  const lProfile2 = createLProfile(
+    20,      // depth
+    4.5,     // flangeYLength
+    4.5,     // flangeXLength
+    0.5      // thickness
+  );
+  
+  // Position the first L-profile at the bottom left edge midpoint
+  const lProfile1Positioned = constraintModelsByPoints(
+    mainModel,
+    {
+      type: 'edge',
+      element: EDGES.LEFT_BOTTOM,
+      params: { t: 0.5 } // Midpoint
+    },
+    lProfile1,
+    {
+      normal: [0, 0, -1],  // Bottom face normal
+      xDir: [1, 0, 0]      // Positive Y direction
+    }
+  );
+  
+  // Position the second L-profile at the bottom right edge midpoint
+  const lProfile2Positioned = constraintModelsByPoints(
+    mainModel,
+    {
+      type: 'edge',
+      element: EDGES.RIGHT_BOTTOM,
+      params: { t: 0.5 } // Midpoint
+    },
+    lProfile2,
+    {
+      normal: [0, 0, -1],  // Bottom face normal
+      xDir: [-1, 0, 0]     // Negative Y direction
+    }
+  );
+  
+  // Fuse the L-profiles with the drilled model
+  const finalModel = drilledModel.fuse(lProfile1Positioned).fuse(lProfile2Positioned);
+  
   // Create helper space if needed
   const helperSpaces = [];
   if (showHelper) {
@@ -65,5 +115,5 @@ export function createHelperCuboid(
   }
   
   // Return model with helpers
-  return modelWithHelpers(drilledModel, helperSpaces);
+  return modelWithHelpers(finalModel, helperSpaces);
 }
