@@ -9,6 +9,7 @@ import { createLProfile } from './lProfile.js';
 import { createCylinder } from './cylinder.js';
 import { compoundShapes } from "replicad";
 import { Vector } from "replicad";
+import { directionalExplode } from '../helpers/explosion.js';
 
 /**
  * Creates a model with a helper cuboid space and drill holes in all four corners
@@ -99,6 +100,8 @@ export function createHelperCuboid(width = 50, depth = 100, height = 200, showHe
   
   // Arrays to store all components separately
   const allParts = [];
+  const explodeDirections = [];
+  const explodeDistances = [];
   
   // Position of first model
   let currentX = 0;
@@ -110,35 +113,25 @@ export function createHelperCuboid(width = 50, depth = 100, height = 200, showHe
     // Create new base model parts for each position
     const modelParts = createBaseModel();
     
-    // Calculate explosion offsets
-    const explodeZ = explosionFactor * vertical_difference * 0.5; // Vertical explosion
-    const explodeX = explosionFactor * 15; // L-profile outward explosion
-    
-    // Position main cuboid with vertical explosion
+    // Add main cuboid with its explosion parameters
     allParts.push(
-      modelParts.cuboid.clone().translate([
-        currentX, 
-        currentY, 
-        currentZ + (i * explodeZ)
-      ])
+      modelParts.cuboid.clone().translate([currentX, currentY, currentZ])
     );
+    explodeDirections.push([0, 0, 1]);
+    explodeDistances.push(vertical_difference * 0.5 * (i + 1));
     
-    // Position L-profiles with outward and vertical explosion
+    // Add L-profiles with their explosion parameters
     allParts.push(
-      modelParts.lProfile1.clone().translate([
-        currentX - explodeX, 
-        currentY, 
-        currentZ + (i * explodeZ)
-      ])
+      modelParts.lProfile1.clone().translate([currentX, currentY, currentZ])
     );
+    explodeDirections.push([-1, 0, 0]);
+    explodeDistances.push(15);
     
     allParts.push(
-      modelParts.lProfile2.clone().translate([
-        currentX + explodeX, 
-        currentY, 
-        currentZ + (i * explodeZ)
-      ])
+      modelParts.lProfile2.clone().translate([currentX, currentY, currentZ])
     );
+    explodeDirections.push([1, 0, 0]);
+    explodeDistances.push(15);
     
     // Update position for next model
     currentY += horizontal_difference;
@@ -177,20 +170,22 @@ export function createHelperCuboid(width = 50, depth = 100, height = 200, showHe
   const helperCenter = helperSpace.boundingBox.center;
   const mirroredCuboid = mirror(trimmedCuboid, "YZ", helperCenter, true);
   
-  // Add explosion to the trimmed and mirrored cuboids
-  const explodeRightX = explosionFactor * 30; // Right cuboid explosion distance
-  const explodeLeftX = explosionFactor * 30; // Left cuboid explosion distance
+  // Add both the trimmed and mirrored cuboids to our collection with explosion directions
+  allParts.push(trimmedCuboid);
+  explodeDirections.push([1, 0, 0]);
+  explodeDistances.push(30);
   
-  // Add both the trimmed and mirrored cuboids to our collection with explosion
-  allParts.push(
-    trimmedCuboid.translate([explodeRightX, 0, 0])
-  );
-  allParts.push(
-    mirroredCuboid.translate([-explodeLeftX, 0, 0])
-  );
+  allParts.push(mirroredCuboid);
+  explodeDirections.push([-1, 0, 0]);
+  explodeDistances.push(30);
+  
+  // Apply explosion effect if factor is greater than 0
+  const finalParts = explosionFactor > 0 
+    ? directionalExplode(allParts, explodeDirections, explodeDistances, explosionFactor)
+    : allParts;
   
   // Combine all parts using compoundShapes (keeps them as distinct parts)
-  const finalModel = compoundShapes(allParts);
+  const finalModel = compoundShapes(finalParts);
   
   // Return model with optional helper space
   return modelWithHelpers(finalModel, showHelper ? [helperSpace] : []);

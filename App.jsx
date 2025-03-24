@@ -29,12 +29,16 @@ Object.entries(modelFunctions).forEach(([name, fn]) => {
   // Get the original function (before validation wrapper)
   const originalFn = fn.original || fn;
   const params = getParamNames(originalFn);
+  
+  // Check if the model supports explosion
+  const hasExplosion = params.some(param => param.name === 'explosionFactor');
+  
   modelInfo[name] = {
     params: params.reduce((obj, param) => {
       obj[param.name] = param.defaultValue;
       return obj;
     }, {}),
-    hasExplosion: name === 'HelperCuboid' // Flag for showing explosion slider
+    hasExplosion // Flag for showing explosion slider
   };
 });
 
@@ -110,7 +114,7 @@ export default function App() {
             ))}
           </select>
           
-          {/* Explosion factor slider for HelperCuboid */}
+          {/* Explosion factor slider for models that support it */}
           {modelInfo[selectedModel].hasExplosion && (
             <div style={{ 
               display: "flex", 
