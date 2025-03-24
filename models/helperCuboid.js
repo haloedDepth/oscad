@@ -22,60 +22,52 @@ export function createHelperCuboid(width = 50, depth = 100, height = 200, showHe
   const mainModel = createCuboid(width-1, 20, 0.5);
   const mainCenter = mainModel.boundingBox.center;
   
-  // Create model with four corner holes
-  const drilledModel = (() => {
-    // Create and position first drill
-    const drill = constraintModelsByPoints(
-      mainModel, 
-      { type: 'face', element: FACES.TOP, params: { u: 1.5 / (width-1), v: 2.25 / 20 } },
-      createDrill(1.2, 0.8, 0.5 * 0.8, 0.5 * 0.2)
-    );
-    
-    // Mirror to all corners and cut
-    return mainModel
-      .cut(drill)
-      .cut(mirror(drill, "XZ", mainCenter, true))
-      .cut(mirror(drill, "YZ", mainCenter, true))
-      .cut(mirror(mirror(drill, "XZ", mainCenter, true), "YZ", mainCenter, true));
-  })();
+  // Create and position first drill
+  const drill = constraintModelsByPoints(
+    mainModel, 
+    { type: 'face', element: FACES.TOP, params: { u: 1.5 / (width-1), v: 2.25 / 20 } },
+    createDrill(1.2, 0.8, 0.5 * 0.8, 0.5 * 0.2)
+  );
   
-  // Add L-profiles to the model
-  const finalModel = (() => {
-    // Create L-profile with two drilled holes
-    const drilledLProfile = (() => {
-      const lProfile = createLProfile(20, 4.5, 4.5, 0.5);
-      const profileCenter = lProfile.boundingBox.center;
-      
-      // Create and position first hole
-      const drill = constraintModelsByPoints(
-        lProfile,
-        { type: 'face', element: FACES.BOTTOM, params: { u: 1.5 / 4.5, v: 2.25 / 20 } },
-        createCylinder(0.800001, 0.5)
-      );
-      
-      // Drill both holes
-      return lProfile
-        .cut(drill)
-        .cut(mirror(drill, "XZ", profileCenter, true));
-    })();
-    
-    // Position first L-profile
-    const lProfile1 = constraintModelsByPoints(
-      drilledModel,
-      { type: 'edge', element: EDGES.LEFT_BOTTOM, params: { t: 0.5 } },
-      drilledLProfile,
-      { normal: [0, 0, -1], xDir: [1, 0, 0] }
-    );
-    
-    // Mirror to create second L-profile and fuse both
-    return drilledModel
-      .fuse(lProfile1)
-      .fuse(mirror(lProfile1, "YZ", mainCenter, true));
-  })();
+  // Mirror to all corners and cut
+  const drilledModel = mainModel
+    .cut(drill)
+    .cut(mirror(drill, "XZ", mainCenter, true))
+    .cut(mirror(drill, "YZ", mainCenter, true))
+    .cut(mirror(mirror(drill, "XZ", mainCenter, true), "YZ", mainCenter, true));
+  
+  // Create L-profile
+  const lProfile = createLProfile(20, 4.5, 4.5, 0.5);
+  const profileCenter = lProfile.boundingBox.center;
+  
+  // Create and position hole for L-profile
+  const holeDrill = constraintModelsByPoints(
+    lProfile,
+    { type: 'face', element: FACES.BOTTOM, params: { u: 1.5 / 4.5, v: 2.25 / 20 } },
+    createCylinder(0.800001, 0.5)
+  );
+  
+  // Drill both holes in L-profile
+  const drilledLProfile = lProfile
+    .cut(holeDrill)
+    .cut(mirror(holeDrill, "XZ", profileCenter, true));
+  
+  // Position first L-profile
+  const lProfile1 = constraintModelsByPoints(
+    drilledModel,
+    { type: 'edge', element: EDGES.LEFT_BOTTOM, params: { t: 0.5 } },
+    drilledLProfile,
+    { normal: [0, 0, -1], xDir: [1, 0, 0] }
+  );
+  
+  // Mirror and add second L-profile
+  const finalModel = drilledModel
+    .fuse(lProfile1)
+    .fuse(mirror(lProfile1, "YZ", mainCenter, true));
+  
+  // Create helper space if needed
+  const helperSpaces = showHelper ? [createCuboid(width, depth, height)] : [];
   
   // Return with optional helper space
-  return modelWithHelpers(
-    finalModel,
-    showHelper ? [createCuboid(width, depth, height)] : []
-  );
+  return modelWithHelpers(finalModel, helperSpaces);
 }
