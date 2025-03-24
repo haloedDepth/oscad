@@ -76,6 +76,9 @@ export function createHelperCuboid(width = 50, depth = 100, height = 200, showHe
     };
   };
   
+  // Create helper space
+  const helperSpace = createCuboid(width, depth, height);
+  
   // Calculate number of models based on height
   const n_models = Math.round(height / 17.5) - 1;
   
@@ -116,11 +119,36 @@ export function createHelperCuboid(width = 50, depth = 100, height = 200, showHe
     currentZ += vertical_difference;
   }
   
+  // Create a new cuboid with the specified dimensions
+  const newCuboid = createCuboid(300, 20, 0.5);
+  
+  // Calculate xDir from the translation vectors used in the model placement
+  // We'll use the direction defined by the change in Y and Z coordinates
+  const deltaY = horizontal_difference;
+  const deltaZ = vertical_difference;
+  const magnitude = Math.sqrt(deltaY * deltaY + deltaZ * deltaZ);
+  
+  // Normalize to get a unit vector (if magnitude is not zero)
+  const xDir = magnitude > 0.001 ? 
+    [0, deltaY / magnitude, deltaZ / magnitude] : 
+    [1, 0, 0]; // fallback if magnitude is too small
+  
+  // Position the new cuboid using constraintModelsByPoints with right face of helper space
+  const positionedNewCuboid = constraintModelsByPoints(
+    helperSpace,
+    { type: 'face', element: FACES.RIGHT },
+    newCuboid,
+    {
+      normal: [-1, 0, 0],
+      xDir: xDir
+    }
+  );
+  
+  // Add the new positioned cuboid to our collection
+  allParts.push(positionedNewCuboid);
+  
   // Combine all parts using compoundShapes (keeps them as distinct parts)
   const finalModel = compoundShapes(allParts);
-  
-  // Create helper space
-  const helperSpace = createCuboid(width, depth, height);
   
   // Return model with optional helper space
   return modelWithHelpers(finalModel, showHelper ? [helperSpace] : []);
