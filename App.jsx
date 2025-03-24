@@ -33,13 +33,15 @@ Object.entries(modelFunctions).forEach(([name, fn]) => {
     params: params.reduce((obj, param) => {
       obj[param.name] = param.defaultValue;
       return obj;
-    }, {})
+    }, {}),
+    hasExplosion: name === 'HelperCuboid' // Flag for showing explosion slider
   };
 });
 
 export default function App() {
   const [selectedModel, setSelectedModel] = useState(Object.keys(modelFunctions)[0]);
   const [params, setParams] = useState(modelInfo[selectedModel].params);
+  const [explosionFactor, setExplosionFactor] = useState(0);
   const [mesh, setMesh] = useState(null);
   const [validationErrors, setValidationErrors] = useState([]);
   
@@ -48,7 +50,13 @@ export default function App() {
     console.time(`[PERF] worker call for ${selectedModel}`);
     console.log(`[INFO] Creating ${selectedModel} with params:`, params);
     
-    cad.createMesh(selectedModel, params).then(result => {
+    // If model supports explosion and we have an explosion factor, include it
+    const modelParams = { ...params };
+    if (modelInfo[selectedModel].hasExplosion) {
+      modelParams.explosionFactor = explosionFactor;
+    }
+    
+    cad.createMesh(selectedModel, modelParams).then(result => {
       console.timeEnd(`[PERF] worker call for ${selectedModel}`);
       
       if (result.error && result.validationErrors) {
@@ -58,12 +66,13 @@ export default function App() {
         setMesh(result);
       }
     });
-  }, [selectedModel, params]);
+  }, [selectedModel, params, explosionFactor]);
   
   const handleModelChange = (e) => {
     const newModel = e.target.value;
     setSelectedModel(newModel);
     setParams(modelInfo[newModel].params);
+    setExplosionFactor(0); // Reset explosion factor when changing models
   };
   
   const handleParamChange = (paramName, value) => {
@@ -71,6 +80,10 @@ export default function App() {
       ...prev,
       [paramName]: value
     }));
+  };
+  
+  const handleExplosionChange = (e) => {
+    setExplosionFactor(parseFloat(e.target.value));
   };
   
   return (
@@ -96,6 +109,32 @@ export default function App() {
               <option key={model} value={model}>{model}</option>
             ))}
           </select>
+          
+          {/* Explosion factor slider for HelperCuboid */}
+          {modelInfo[selectedModel].hasExplosion && (
+            <div style={{ 
+              display: "flex", 
+              alignItems: "center", 
+              marginLeft: "15px",
+              backgroundColor: "#e6f7ff",
+              padding: "5px 10px",
+              borderRadius: "4px"
+            }}>
+              <span style={{ marginRight: "8px", fontWeight: "bold" }}>Explosion View:</span>
+              <input
+                type="range"
+                min="0"
+                max="1"
+                step="0.01"
+                value={explosionFactor}
+                onChange={handleExplosionChange}
+                style={{ width: "150px" }}
+              />
+              <span style={{ marginLeft: "5px", minWidth: "40px" }}>
+                {Math.round(explosionFactor * 100)}%
+              </span>
+            </div>
+          )}
         </div>
         
         <div style={{ 
@@ -104,6 +143,9 @@ export default function App() {
           gap: "10px"
         }}>
           {Object.entries(params).map(([paramName, value]) => {
+            // Skip explosionFactor as we handle it separately
+            if (paramName === 'explosionFactor') return null;
+            
             const isBoolean = typeof value === 'boolean';
             
             return (

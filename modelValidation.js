@@ -50,6 +50,7 @@ export const modelSchemas = {
   // Add this to modelValidation.js
   "HelperCuboid": [
     // Validate dimensions are positive
-  validateAll(isPositive, 'width', 'depth', 'height')
-]
+    validateAll(isPositive, 'width', 'depth', 'height'),
+    // No validation for explosionFactor as it can be 0
+  ]
 };

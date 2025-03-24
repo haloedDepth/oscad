@@ -18,9 +18,10 @@ import { Vector } from "replicad";
  * @param {number} depth - Depth of the helper cuboid
  * @param {number} height - Height of the helper cuboid
  * @param {boolean} showHelper - Whether to show the helper space
+ * @param {number} explosionFactor - Factor for exploded view (0-1)
  * @returns {Object} Model with helper space
  */
-export function createHelperCuboid(width = 50, depth = 100, height = 200, showHelper = true) {
+export function createHelperCuboid(width = 50, depth = 100, height = 200, showHelper = true, explosionFactor = 0) {
   // Create base model components separately (without fusing)
   const createBaseModel = () => {
     // Create main model (thin cuboid)
@@ -109,10 +110,35 @@ export function createHelperCuboid(width = 50, depth = 100, height = 200, showHe
     // Create new base model parts for each position
     const modelParts = createBaseModel();
     
-    // Position each part separately and add to the array
-    allParts.push(modelParts.cuboid.clone().translate([currentX, currentY, currentZ]));
-    allParts.push(modelParts.lProfile1.clone().translate([currentX, currentY, currentZ]));
-    allParts.push(modelParts.lProfile2.clone().translate([currentX, currentY, currentZ]));
+    // Calculate explosion offsets
+    const explodeZ = explosionFactor * vertical_difference * 0.5; // Vertical explosion
+    const explodeX = explosionFactor * 15; // L-profile outward explosion
+    
+    // Position main cuboid with vertical explosion
+    allParts.push(
+      modelParts.cuboid.clone().translate([
+        currentX, 
+        currentY, 
+        currentZ + (i * explodeZ)
+      ])
+    );
+    
+    // Position L-profiles with outward and vertical explosion
+    allParts.push(
+      modelParts.lProfile1.clone().translate([
+        currentX - explodeX, 
+        currentY, 
+        currentZ + (i * explodeZ)
+      ])
+    );
+    
+    allParts.push(
+      modelParts.lProfile2.clone().translate([
+        currentX + explodeX, 
+        currentY, 
+        currentZ + (i * explodeZ)
+      ])
+    );
     
     // Update position for next model
     currentY += horizontal_difference;
@@ -120,7 +146,7 @@ export function createHelperCuboid(width = 50, depth = 100, height = 200, showHe
   }
   
   // Create a new cuboid with the specified dimensions
-  const newCuboid = createCuboid(400, 20, 0.5);
+  const newCuboid = createCuboid(600, 20, 0.5);
   
   // Calculate xDir from the translation vectors used in the model placement
   // We'll use the direction defined by the change in Y and Z coordinates
@@ -151,9 +177,17 @@ export function createHelperCuboid(width = 50, depth = 100, height = 200, showHe
   const helperCenter = helperSpace.boundingBox.center;
   const mirroredCuboid = mirror(trimmedCuboid, "YZ", helperCenter, true);
   
-  // Add both the trimmed and mirrored cuboids to our collection
-  allParts.push(trimmedCuboid);
-  allParts.push(mirroredCuboid);
+  // Add explosion to the trimmed and mirrored cuboids
+  const explodeRightX = explosionFactor * 30; // Right cuboid explosion distance
+  const explodeLeftX = explosionFactor * 30; // Left cuboid explosion distance
+  
+  // Add both the trimmed and mirrored cuboids to our collection with explosion
+  allParts.push(
+    trimmedCuboid.translate([explodeRightX, 0, 0])
+  );
+  allParts.push(
+    mirroredCuboid.translate([-explodeLeftX, 0, 0])
+  );
   
   // Combine all parts using compoundShapes (keeps them as distinct parts)
   const finalModel = compoundShapes(allParts);
