@@ -120,7 +120,7 @@ export function createHelperCuboid(width = 50, depth = 100, height = 200, showHe
   }
   
   // Create a new cuboid with the specified dimensions
-  const newCuboid = createCuboid(300, 20, 0.5);
+  const newCuboid = createCuboid(400, 20, 0.5);
   
   // Calculate xDir from the translation vectors used in the model placement
   // We'll use the direction defined by the change in Y and Z coordinates
@@ -144,8 +144,16 @@ export function createHelperCuboid(width = 50, depth = 100, height = 200, showHe
     }
   );
   
-  // Add the new positioned cuboid to our collection
-  allParts.push(positionedNewCuboid);
+  // Intersect with helper space to cut off part outside
+  const trimmedCuboid = positionedNewCuboid.intersect(helperSpace);
+  
+  // Mirror the trimmed cuboid across YZ plane
+  const helperCenter = helperSpace.boundingBox.center;
+  const mirroredCuboid = mirror(trimmedCuboid, "YZ", helperCenter, true);
+  
+  // Add both the trimmed and mirrored cuboids to our collection
+  allParts.push(trimmedCuboid);
+  allParts.push(mirroredCuboid);
   
   // Combine all parts using compoundShapes (keeps them as distinct parts)
   const finalModel = compoundShapes(allParts);
