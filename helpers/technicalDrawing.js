@@ -1,4 +1,4 @@
-// helpers/technicalDrawing.js
+// helpers/technicalDrawing.js - CORRECTED VERSION
 import { drawProjection } from "replicad";
 import { exportableModel } from '../helperUtils.js';
 
@@ -12,7 +12,6 @@ export function createOrthographicProjections(model) {
   const mainModel = exportableModel(model);
   
   // Create projections for standard views
-  // From replicad/src/draw.ts:435, drawProjection returns {visible: Drawing, hidden: Drawing}
   const frontView = drawProjection(mainModel, "front");
   const topView = drawProjection(mainModel, "top");
   const rightView = drawProjection(mainModel, "right");
@@ -55,32 +54,30 @@ export function createOrthographicProjections(model) {
 }
 
 /**
- * Processes projections to be suitable for rendering
+ * Processes projections to be suitable for rendering as SVG
  * @param {Object} projections - The projections object from createOrthographicProjections
- * @returns {Object} Processed projections ready for rendering
+ * @returns {Object} Processed projections ready for SVG rendering
  */
 export function processProjectionsForRendering(projections) {
   const processedViews = {};
   
   // Process standard views
   for (const [viewName, view] of Object.entries(projections.standard)) {
-    // From replicad/src/shapes.ts, meshEdges() returns {lines, edgeGroups}
-    // That's what we need to serialize
-    const visibleMesh = view.visible.meshEdges ? view.visible.meshEdges() : null;
-    const hiddenMesh = view.hidden.meshEdges ? view.hidden.meshEdges() : null;
-    
+    // Process each view to get SVG path data
     processedViews[viewName] = {
-      visible: visibleMesh ? {
-        // Convert TypedArrays to regular Arrays to ensure serialization works
-        lines: Array.from(visibleMesh.lines || []),
-        edgeGroups: visibleMesh.edgeGroups ? 
-          visibleMesh.edgeGroups.map(group => ({...group})) : []
-      } : { lines: [], edgeGroups: [] },
-      hidden: hiddenMesh ? {
-        lines: Array.from(hiddenMesh.lines || []),
-        edgeGroups: hiddenMesh.edgeGroups ? 
-          hiddenMesh.edgeGroups.map(group => ({...group})) : []
-      } : { lines: [], edgeGroups: [] }
+      visible: {
+        paths: view.visible.toSVGPaths(),
+        viewBox: view.visible.toSVGViewBox(2)
+      },
+      hidden: {
+        paths: view.hidden.toSVGPaths(),
+        viewBox: view.hidden.toSVGViewBox(2)
+      },
+      // Combine both viewboxes to ensure consistent scaling
+      combinedViewBox: combineViewBoxes(
+        view.visible.toSVGViewBox(2), 
+        view.hidden.toSVGViewBox(2)
+      )
     };
   }
   
@@ -89,20 +86,19 @@ export function processProjectionsForRendering(projections) {
   for (const part of projections.parts) {
     const views = {};
     for (const [viewName, view] of Object.entries(part.views)) {
-      const visibleMesh = view.visible.meshEdges ? view.visible.meshEdges() : null;
-      const hiddenMesh = view.hidden.meshEdges ? view.hidden.meshEdges() : null;
-      
       views[viewName] = {
-        visible: visibleMesh ? {
-          lines: Array.from(visibleMesh.lines || []),
-          edgeGroups: visibleMesh.edgeGroups ? 
-            visibleMesh.edgeGroups.map(group => ({...group})) : []
-        } : { lines: [], edgeGroups: [] },
-        hidden: hiddenMesh ? {
-          lines: Array.from(hiddenMesh.lines || []),
-          edgeGroups: hiddenMesh.edgeGroups ? 
-            hiddenMesh.edgeGroups.map(group => ({...group})) : []
-        } : { lines: [], edgeGroups: [] }
+        visible: {
+          paths: view.visible.toSVGPaths(),
+          viewBox: view.visible.toSVGViewBox(2)
+        },
+        hidden: {
+          paths: view.hidden.toSVGPaths(),
+          viewBox: view.hidden.toSVGViewBox(2)
+        },
+        combinedViewBox: combineViewBoxes(
+          view.visible.toSVGViewBox(2), 
+          view.hidden.toSVGViewBox(2)
+        )
       };
     }
     
@@ -116,4 +112,45 @@ export function processProjectionsForRendering(projections) {
     standard: processedViews,
     parts: processedParts
   };
+}
+
+/**
+ * Helper function to combine two viewbox strings to create one that encompasses both
+ * @param {string} viewBox1 - First viewBox string "x y width height"
+ * @param {string} viewBox2 - Second viewBox string "x y width height"
+ * @returns {string} Combined viewBox string
+ */
+function combineViewBoxes(viewBox1, viewBox2) {
+  // Default empty viewBox
+  const defaultViewBox = "0 0 100 100";
+  
+  // Parse viewBox strings
+  const parseViewBox = (vb) => {
+    if (!vb) return null;
+    const parts = vb.split(' ').map(parseFloat);
+    if (parts.length !== 4) return null;
+    return {
+      x: parts[0],
+      y: parts[1],
+      width: parts[2],
+      height: parts[3]
+    };
+  };
+  
+  const box1 = parseViewBox(viewBox1) || parseViewBox(defaultViewBox);
+  const box2 = parseViewBox(viewBox2) || parseViewBox(defaultViewBox);
+  
+  // If both boxes are empty/invalid, return a default
+  if (!box1 && !box2) return defaultViewBox;
+  if (!box1) return viewBox2 || defaultViewBox;
+  if (!box2) return viewBox1 || defaultViewBox;
+  
+  // Find the combined bounds
+  const minX = Math.min(box1.x, box2.x);
+  const minY = Math.min(box1.y, box2.y);
+  const maxX = Math.max(box1.x + box1.width, box2.x + box2.width);
+  const maxY = Math.max(box1.y + box1.height, box2.y + box2.height);
+  
+  // Construct the new viewBox
+  return `${minX} ${minY} ${maxX - minX} ${maxY - minY}`;
 }

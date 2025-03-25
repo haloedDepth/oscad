@@ -1,10 +1,7 @@
-// TechnicalDrawingView.jsx
+// TechnicalDrawingView.jsx - CORRECTED VERSION
 import React, { useEffect, useRef, useState } from 'react';
-import * as THREE from 'three';
-import { Canvas, useThree } from "@react-three/fiber";
-import { OrthographicCamera } from "@react-three/drei";
 
-// Technical drawing display component
+// SVG Technical Drawing Projection component
 function ProjectionView({ projection, title, position, dimensions }) {
   if (!projection) return null;
   
@@ -23,48 +20,130 @@ function ProjectionView({ projection, title, position, dimensions }) {
       backgroundColor: '#f8f8f8',
       overflow: 'hidden'
     }}>
-      <div style={{ padding: '5px', borderBottom: '1px solid #ddd', backgroundColor: '#eee', fontSize: '12px', fontWeight: 'bold' }}>
+      <div style={{ 
+        padding: '5px', 
+        borderBottom: '1px solid #ddd', 
+        backgroundColor: '#eee', 
+        fontSize: '12px', 
+        fontWeight: 'bold' 
+      }}>
         {title}
       </div>
-      <Canvas 
-        orthographic 
-        camera={{ position: [0, 0, 100], zoom: 1, near: 0.1, far: 1000 }}
-        style={{ width: '100%', height: 'calc(100% - 30px)' }}
-      >
-        <ambientLight intensity={1} />
-        
-        {/* Visible lines */}
-        {projection.visible && (
-          <lineSegments>
-            <bufferGeometry attach="geometry">
-              <bufferAttribute
-                attachObject={['attributes', 'position']}
-                count={projection.visible.lines.length / 3}
-                array={new Float32Array(projection.visible.lines)}
-                itemSize={3}
+      
+      <div style={{ width: '100%', height: 'calc(100% - 30px)', position: 'relative' }}>
+        <svg 
+          viewBox={projection.combinedViewBox} 
+          style={{ width: '100%', height: '100%' }}
+          preserveAspectRatio="xMidYMid meet"
+        >
+          {/* Visible lines */}
+          <g>
+            {projection.visible.paths.map((path, i) => (
+              <path 
+                key={`visible-${i}`} 
+                d={path} 
+                stroke="#000000" 
+                strokeWidth="0.5" 
+                fill="none"
               />
-            </bufferGeometry>
-            <lineBasicMaterial attach="material" color="#000000" linewidth={2} />
-          </lineSegments>
-        )}
-        
-        {/* Hidden lines */}
-        {projection.hidden && (
-          <lineSegments>
-            <bufferGeometry attach="geometry">
-              <bufferAttribute
-                attachObject={['attributes', 'position']}
-                count={projection.hidden.lines.length / 3}
-                array={new Float32Array(projection.hidden.lines)}
-                itemSize={3}
+            ))}
+          </g>
+          
+          {/* Hidden lines */}
+          <g>
+            {projection.hidden.paths.map((path, i) => (
+              <path 
+                key={`hidden-${i}`} 
+                d={path} 
+                stroke="#777777" 
+                strokeWidth="0.3" 
+                fill="none"
+                strokeDasharray="2,1"
               />
-            </bufferGeometry>
-            <lineBasicMaterial attach="material" color="#777777" linewidth={1} dashSize={3} gapSize={1} />
-          </lineSegments>
-        )}
-        
-        <OrthographicCamera makeDefault position={[0, 0, 100]} />
-      </Canvas>
+            ))}
+          </g>
+        </svg>
+      </div>
+    </div>
+  );
+}
+
+// Component to render individual part views
+function PartView({ part, index }) {
+  if (!part || !part.views) return null;
+  
+  return (
+    <div key={index} style={{ 
+      margin: '10px', 
+      border: '1px solid #ccc', 
+      backgroundColor: 'white' 
+    }}>
+      <h4 style={{ 
+        padding: '5px', 
+        margin: 0, 
+        backgroundColor: '#eee' 
+      }}>
+        {part.name}
+      </h4>
+      <div style={{ 
+        display: 'flex', 
+        flexWrap: 'wrap', 
+        padding: '10px' 
+      }}>
+        {Object.entries(part.views).map(([viewName, view], viewIndex) => (
+          <div key={viewIndex} style={{ 
+            margin: '5px', 
+            width: '150px', 
+            height: '150px', 
+            border: '1px solid #ddd' 
+          }}>
+            <div style={{ 
+              padding: '3px', 
+              borderBottom: '1px solid #ddd', 
+              fontSize: '10px' 
+            }}>
+              {viewName}
+            </div>
+            <div style={{ 
+              width: '100%', 
+              height: 'calc(100% - 20px)' 
+            }}>
+              <svg 
+                viewBox={view.combinedViewBox} 
+                style={{ width: '100%', height: '100%' }}
+                preserveAspectRatio="xMidYMid meet"
+              >
+                {/* Visible lines */}
+                <g>
+                  {view.visible.paths.map((path, i) => (
+                    <path 
+                      key={`visible-${i}`} 
+                      d={path} 
+                      stroke="#000000" 
+                      strokeWidth="0.5" 
+                      fill="none"
+                    />
+                  ))}
+                </g>
+                
+                {/* Hidden lines */}
+                <g>
+                  {view.hidden.paths.map((path, i) => (
+                    <path 
+                      key={`hidden-${i}`} 
+                      d={path} 
+                      stroke="#777777" 
+                      strokeWidth="0.3" 
+                      fill="none"
+                      strokeDasharray="2,1"
+                    />
+                  ))}
+                </g>
+              </svg>
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
@@ -95,7 +174,12 @@ export default function TechnicalDrawingView({ projections }) {
   const viewHeight = containerSize.height / 2;
   
   return (
-    <div ref={containerRef} style={{ width: '100%', height: '100%', position: 'relative', backgroundColor: '#f0f0f0' }}>
+    <div ref={containerRef} style={{ 
+      width: '100%', 
+      height: '100%', 
+      position: 'relative', 
+      backgroundColor: '#f0f0f0' 
+    }}>
       {projections.standard && (
         <>
           {/* Front View - Center position */}
@@ -126,24 +210,16 @@ export default function TechnicalDrawingView({ projections }) {
       
       {/* Render individual part projections if available */}
       {projections.parts && projections.parts.length > 0 && (
-        <div style={{ position: 'absolute', top: viewHeight * 1.2, left: 0, width: '100%' }}>
+        <div style={{ 
+          position: 'absolute', 
+          top: viewHeight * 1.2, 
+          left: 0, 
+          width: '100%' 
+        }}>
           <h3 style={{ padding: '10px', margin: 0 }}>Component Views</h3>
           <div style={{ display: 'flex', flexWrap: 'wrap' }}>
             {projections.parts.map((part, index) => (
-              <div key={index} style={{ margin: '10px', border: '1px solid #ccc', backgroundColor: 'white' }}>
-                <h4 style={{ padding: '5px', margin: 0, backgroundColor: '#eee' }}>{part.name}</h4>
-                <div style={{ display: 'flex', flexWrap: 'wrap', padding: '10px' }}>
-                  {Object.entries(part.views).map(([viewName, view], viewIndex) => (
-                    <div key={viewIndex} style={{ margin: '5px', width: '150px', height: '150px', border: '1px solid #ddd' }}>
-                      <div style={{ padding: '3px', borderBottom: '1px solid #ddd', fontSize: '10px' }}>{viewName}</div>
-                      <Canvas orthographic camera={{ position: [0, 0, 100], zoom: 1 }}>
-                        <ambientLight />
-                        {/* View content */}
-                      </Canvas>
-                    </div>
-                  ))}
-                </div>
-              </div>
+              <PartView key={index} part={part} index={index} />
             ))}
           </div>
         </div>
