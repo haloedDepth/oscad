@@ -5,6 +5,7 @@ import { expose } from "comlink";
 
 // Import our model functions from the models folder
 import { modelFunctions } from "./models";
+import { createOrthographicProjections, processProjectionsForRendering } from "./helpers/technicalDrawing.js";
 
 // Initialize OpenCascade
 let loaded = false;
@@ -111,5 +112,40 @@ function createMesh(modelName, params) {
   });
 }
 
-// Export just the function needed
-expose({ createMesh });
+// Function to create orthographic projections for technical drawings
+function createProjections(modelName, params) {
+  console.time(`[PERF] Total ${modelName} projections creation`);
+  
+  return started.then(() => {
+    // Get the model creation function
+    const modelFn = modelFunctions[modelName];
+    
+    // Call the function with the parameter values
+    const result = modelFn(...Object.values(params));
+    
+    // Check if validation failed
+    if (result && result.validationErrors) {
+      return {
+        error: true,
+        validationErrors: result.validationErrors
+      };
+    }
+    
+    // Create orthographic projections
+    console.time(`[PERF] ${modelName} projections generation`);
+    const projections = createOrthographicProjections(result);
+    console.timeEnd(`[PERF] ${modelName} projections generation`);
+    
+    // Process projections for rendering
+    console.time(`[PERF] ${modelName} projections processing`);
+    const processedProjections = processProjectionsForRendering(projections);
+    console.timeEnd(`[PERF] ${modelName} projections processing`);
+    
+    console.timeEnd(`[PERF] Total ${modelName} projections creation`);
+    
+    return processedProjections;
+  });
+}
+
+// Export the functions needed
+expose({ createMesh, createProjections });

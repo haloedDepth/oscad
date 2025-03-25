@@ -3,6 +3,7 @@ import { wrap } from "comlink";
 
 import ThreeContext from "./ThreeContext.jsx";
 import ReplicadMesh from "./ReplicadMesh.jsx";
+import TechnicalDrawingView from "./TechnicalDrawingView.jsx";
 
 import cadWorker from "./worker.js?worker";
 import { modelFunctions } from "./models";
@@ -47,7 +48,9 @@ export default function App() {
   const [params, setParams] = useState(modelInfo[selectedModel].params);
   const [explosionFactor, setExplosionFactor] = useState(0);
   const [mesh, setMesh] = useState(null);
+  const [projections, setProjections] = useState(null);
   const [validationErrors, setValidationErrors] = useState([]);
+  const [activeTab, setActiveTab] = useState('3d'); // Add tab state ('3d' or 'technical')
   
   useEffect(() => {
     setValidationErrors([]);
@@ -66,17 +69,40 @@ export default function App() {
       if (result.error && result.validationErrors) {
         setValidationErrors(result.validationErrors);
         setMesh(null);
+        setProjections(null);
       } else {
         setMesh(result);
+        
+        // Also generate technical drawings for the valid model
+        if (activeTab === 'technical') {
+          cad.createProjections(selectedModel, modelParams).then(projections => {
+            setProjections(projections);
+          });
+        }
       }
     });
   }, [selectedModel, params, explosionFactor]);
+  
+  // When tab changes, generate the required view data
+  useEffect(() => {
+    if (activeTab === 'technical' && mesh && !projections) {
+      const modelParams = { ...params };
+      if (modelInfo[selectedModel].hasExplosion) {
+        modelParams.explosionFactor = explosionFactor;
+      }
+      
+      cad.createProjections(selectedModel, modelParams).then(projections => {
+        setProjections(projections);
+      });
+    }
+  }, [activeTab]);
   
   const handleModelChange = (e) => {
     const newModel = e.target.value;
     setSelectedModel(newModel);
     setParams(modelInfo[newModel].params);
     setExplosionFactor(0); // Reset explosion factor when changing models
+    setProjections(null); // Reset projections for new model
   };
   
   const handleParamChange = (paramName, value) => {
@@ -114,8 +140,44 @@ export default function App() {
             ))}
           </select>
           
-          {/* Explosion factor slider for models that support it */}
-          {modelInfo[selectedModel].hasExplosion && (
+          {/* View tabs */}
+          <div style={{ 
+            display: "flex", 
+            marginLeft: "20px", 
+            borderRadius: "4px", 
+            overflow: "hidden", 
+            border: "1px solid #ccc" 
+          }}>
+            <button 
+              onClick={() => setActiveTab('3d')} 
+              style={{
+                padding: "4px 12px",
+                border: "none",
+                background: activeTab === '3d' ? "#4a90e2" : "#f0f0f0",
+                color: activeTab === '3d' ? "white" : "#333",
+                cursor: "pointer",
+                fontWeight: activeTab === '3d' ? "bold" : "normal"
+              }}
+            >
+              3D View
+            </button>
+            <button 
+              onClick={() => setActiveTab('technical')} 
+              style={{
+                padding: "4px 12px",
+                border: "none",
+                background: activeTab === 'technical' ? "#4a90e2" : "#f0f0f0",
+                color: activeTab === 'technical' ? "white" : "#333",
+                cursor: "pointer",
+                fontWeight: activeTab === 'technical' ? "bold" : "normal"
+              }}
+            >
+              Technical Drawing
+            </button>
+          </div>
+          
+          {/* Explosion factor slider - only show in 3D view */}
+          {activeTab === '3d' && modelInfo[selectedModel].hasExplosion && (
             <div style={{ 
               display: "flex", 
               alignItems: "center", 
@@ -210,15 +272,7 @@ export default function App() {
       </div>
       
       <div style={{ flex: 1 }}>
-        {mesh ? (
-          <ThreeContext>
-            <ReplicadMesh 
-              edges={mesh.edges} 
-              faces={mesh.faces} 
-              helperSpaces={mesh.helperSpaces || []} 
-            />
-          </ThreeContext>
-        ) : (
+        {validationErrors.length > 0 ? (
           <div style={{ 
             height: "100%", 
             display: "flex", 
@@ -227,8 +281,39 @@ export default function App() {
             fontSize: "12px",
             color: "#999"
           }}>
-            {validationErrors.length > 0 ? 'Fix parameters to see model' : 'Loading...'}
+            Fix parameters to see model
           </div>
+        ) : (
+          <>
+            {/* 3D View */}
+            {activeTab === '3d' && mesh ? (
+              <ThreeContext>
+                <ReplicadMesh 
+                  edges={mesh.edges} 
+                  faces={mesh.faces} 
+                  helperSpaces={mesh.helperSpaces || []} 
+                />
+              </ThreeContext>
+            ) : null}
+            
+            {/* Technical Drawing View */}
+            {activeTab === 'technical' ? (
+              projections ? (
+                <TechnicalDrawingView projections={projections} />
+              ) : (
+                <div style={{ 
+                  height: "100%", 
+                  display: "flex", 
+                  alignItems: "center", 
+                  justifyContent: "center",
+                  fontSize: "12px",
+                  color: "#999"
+                }}>
+                  Loading technical drawings...
+                </div>
+              )
+            ) : null}
+          </>
         )}
       </div>
     </div>
